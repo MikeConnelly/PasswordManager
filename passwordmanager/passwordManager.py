@@ -8,6 +8,7 @@ functionality:
  - encrypt information in both tables
  - decrypt and retrieve information
 '''
+import sys
 import os.path
 import sqlite3
 
@@ -66,24 +67,36 @@ def create_user_table(username):
     conn.close()
 
 
-def add_user_info(user, service, service_username, service_password):
+def create_user_cmd():
 
-    sqlite_file = 'pmdb.sqlite'
+    print('Enter username: ')
+    username = input()
 
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
+    masterpass = ''
+    while not masterpass:
+        print('Create password: ')
+        masterpass = input()
+        print('Confirm password: ')
+        if input() != masterpass:
+            masterpass = ''
 
-    params = (service, service_username, service_password)
-    c.execute("INSERT INTO " + user + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
-
-    conn.commit()
-    conn.close()
+    create_user(username, masterpass)
 
 
 def create_user(username, masterpass):
 
     add_user_to_master(username, masterpass)
     create_user_table(username)
+
+
+def login_cmd():
+
+    print('Enter username: ')
+    username = input()
+    print('Enter password: ')
+    password = input()
+
+    login(username, password)
 
 
 def login(username, password):
@@ -97,20 +110,60 @@ def login(username, password):
     row = c.fetchall()
 
     if row[0][1] == password:
-        pass
+        print('login successful')
+    else:
+        print('invalid password')
 
     c.close()
 
 
 def retrieve_table(user):
-    pass
+
+    sqlite_file = 'pmdb.sqlite'
+
+    conn = sqlite3.connect(sqlite_file)
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM " + user + "_PASSWORD_DATABASE")
+    table = c.fetchall()
+
+    print(table)
+
+    c.close()
+
+
+def add_user_entry(user, service, service_username, service_password):
+
+    sqlite_file = 'pmdb.sqlite'
+
+    conn = sqlite3.connect(sqlite_file)
+    c = conn.cursor()
+
+    params = (service, service_username, service_password)
+    c.execute("INSERT INTO " + user + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
+
+    conn.commit()
+    conn.close()
+
+
+def get_user_command():
+
+    commands = {
+        'retrieve': retrieve_table,
+    }
+
+    commands[input()]
 
 
 if __name__ == '__main__':
 
-    user = 'mike'
-    password = 'maspass'
+    command = sys.argv[1]
 
-    #create_user(user, password)
-    login(user, password)
-    retrieve_table(user)
+    if command == 'newuser':
+        create_user_cmd()
+    elif command == 'login':
+        login_cmd()
+    else:
+        print('invalid command')
+
+    get_user_command()
