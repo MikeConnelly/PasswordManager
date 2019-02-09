@@ -11,159 +11,153 @@ functionality:
 import sys
 import os.path
 import sqlite3
+from .user import User
 
 
-def create_db():
+class PasswordManager:
 
-    sqlite_file = 'pmdb.sqlite'
-    table_name = 'USER_DATABASE'
-    field_1 = 'USER'
-    field_2 = 'MASTER_PASSWORD'
-    field_type = 'TEXT'
+    def __init__(self):
 
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
+        self.sqlite_file = 'pmdb.sqlite'
 
-    c.execute("CREATE TABLE {tn} ({f1} {ft}, {f2} {ft})"
-              .format(tn=table_name, f1=field_1, f2=field_2, ft=field_type))
+        if not os.path.isfile(self.sqlite_file):
+            self.create_db()
+        else:
+            self.conn = sqlite3.connect(self.sqlite_file)
+            self.cursor = self.conn.cursor()
 
-    conn.commit()
-    conn.close()
+    def create_db(self):
 
+        table_name = 'USER_DATABASE'
+        field_1 = 'USER'
+        field_2 = 'MASTER_PASSWORD'
+        field_type = 'TEXT'
 
-def add_user_to_master(username, masterpass):
+        self.conn = sqlite3.connect(self.sqlite_file)
+        self.cursor = self.conn.cursor()
 
-    sqlite_file = 'pmdb.sqlite'
+        self.cursor.execute("CREATE TABLE {tn} ({f1} {ft}, {f2} {ft})"
+                  .format(tn=table_name, f1=field_1, f2=field_2, ft=field_type))
 
-    if not os.path.isfile(sqlite_file):
-        create_db()
+        self.conn.commit()
 
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
+    def add_user_to_master(self, username, masterpass):
 
-    params = (username, masterpass)
-    c.execute("INSERT INTO USER_DATABASE (USER, MASTER_PASSWORD) VALUES (?, ?)", params)
+        params = (username, masterpass)
+        self.cursor.execute("INSERT INTO USER_DATABASE (USER, MASTER_PASSWORD) VALUES (?, ?)", params)
 
-    conn.commit()
-    conn.close()
+        self.conn.commit()
 
+    def create_user_table(self, username):
 
-def create_user_table(username):
+        table_name = username + '_PASSWORD_DATABASE'
+        field_1 = 'SERVICE'
+        field_2 = 'USERNAME'
+        field_3 = 'PASSWORD'
+        field_type = 'TEXT'
 
-    sqlite_file = 'pmdb.sqlite'
-    table_name = username + '_PASSWORD_DATABASE'
-    field_1 = 'SERVICE'
-    field_2 = 'USERNAME'
-    field_3 = 'PASSWORD'
-    field_type = 'TEXT'
+        self.cursor.execute("CREATE TABLE {tn} ({f1} {ft}, {f2} {ft}, {f3} {ft})"
+                  .format(tn=table_name, f1=field_1, f2=field_2, f3=field_3, ft=field_type))
 
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
+        self.conn.commit()
 
-    c.execute("CREATE TABLE {tn} ({f1} {ft}, {f2} {ft}, {f3} {ft})"
-              .format(tn=table_name, f1=field_1, f2=field_2, f3=field_3, ft=field_type))
+    def create_user_cmd(self):
 
-    conn.commit()
-    conn.close()
+        print('Enter username: ')
+        username = input()
 
+        masterpass = ''
+        while not masterpass:
+            print('Create password: ')
+            masterpass = input()
+            print('Confirm password: ')
+            if input() != masterpass:
+                masterpass = ''
 
-def create_user_cmd():
+        self.create_user(username, masterpass)
 
-    print('Enter username: ')
-    username = input()
+    def create_user(self, username, masterpass):
 
-    masterpass = ''
-    while not masterpass:
-        print('Create password: ')
-        masterpass = input()
-        print('Confirm password: ')
-        if input() != masterpass:
-            masterpass = ''
+        self.add_user_to_master(username, masterpass)
+        self.create_user_table(username)
 
-    create_user(username, masterpass)
+        self.user = User(username, masterpass)
 
+    def login_cmd(self):
 
-def create_user(username, masterpass):
+        print('Enter username: ')
+        username = input()
+        print('Enter password: ')
+        password = input()
 
-    add_user_to_master(username, masterpass)
-    create_user_table(username)
+        self.login(username, password)
 
+    def login(self, username, password):
 
-def login_cmd():
+        self.cursor.execute("SELECT * FROM USER_DATABASE WHERE USER = ?", (username,))
+        row = self.cursor.fetchall()
 
-    print('Enter username: ')
-    username = input()
-    print('Enter password: ')
-    password = input()
+        if row[0][1] == password:
+            print('login successful')
+        else:
+            print('invalid password')
 
-    login(username, password)
+        self.user = User(username, password)
 
+    def retrieve_table(self, user):
 
-def login(username, password):
+        self.cursor.execute("SELECT * FROM " + user + "_PASSWORD_DATABASE")
+        table = self.cursor.fetchall()
 
-    sqlite_file = 'pmdb.sqlite'
+        user.fill_table(table)
+        print(table)
 
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
+    def add_user_entry_cmd(self):
 
-    c.execute("SELECT * FROM USER_DATABASE WHERE USER = ?", (username,))
-    row = c.fetchall()
+        print('Service: ')
+        service = input()
 
-    if row[0][1] == password:
-        print('login successful')
-    else:
-        print('invalid password')
+        print('Username: ')
+        username = input()
 
-    c.close()
+        print('Password: ')
+        password = input()
 
+        self.add_user_entry(self.user, service, username, password)
 
-def retrieve_table(user):
+    def add_user_entry(self, user, service, service_username, service_password):
 
-    sqlite_file = 'pmdb.sqlite'
+        params = (service, service_username, service_password)
+        self.cursor.execute("INSERT INTO " + user + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
 
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
+        self.conn.commit()
 
-    c.execute("SELECT * FROM " + user + "_PASSWORD_DATABASE")
-    table = c.fetchall()
+    def get_user_command(self):
 
-    print(table)
+        print('1: retrieve table')
+        print('2: add entry')
+        print('3: logout')
 
-    c.close()
+        commands = {
+            1: self.retrieve_table,
+            2: self.add_user_entry_cmd,
+            3: exit,
+        }
 
-
-def add_user_entry(user, service, service_username, service_password):
-
-    sqlite_file = 'pmdb.sqlite'
-
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
-
-    params = (service, service_username, service_password)
-    c.execute("INSERT INTO " + user + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
-
-    conn.commit()
-    conn.close()
-
-
-def get_user_command():
-
-    commands = {
-        'retrieve': retrieve_table,
-    }
-
-    commands[input()]
+        commands[input()]()
 
 
 if __name__ == '__main__':
 
+    pm = PasswordManager()
+
     command = sys.argv[1]
 
     if command == 'newuser':
-        create_user_cmd()
+        pm.create_user_cmd()
     elif command == 'login':
-        login_cmd()
+        pm.login_cmd()
     else:
         print('invalid command')
 
-    get_user_command()
+    pm.get_user_command()
