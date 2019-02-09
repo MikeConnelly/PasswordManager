@@ -7,8 +7,9 @@ functionality:
  - authenticate user information to login
  - encrypt information in both tables
  - decrypt and retrieve information
+ - change database library to sqalchemy?
+ _ figure out crypto library
 '''
-import sys
 import os.path
 import sqlite3
 from .user import User
@@ -18,6 +19,7 @@ class PasswordManager:
 
     def __init__(self):
 
+        self.user = None
         self.sqlite_file = 'pmdb.sqlite'
 
         if not os.path.isfile(self.sqlite_file):
@@ -43,10 +45,17 @@ class PasswordManager:
 
     def add_user_to_master(self, username, masterpass):
 
-        params = (username, masterpass)
-        self.cursor.execute("INSERT INTO USER_DATABASE (USER, MASTER_PASSWORD) VALUES (?, ?)", params)
+        # check if user already exists
+        self.cursor.execute("SELECT * FROM USER_DATABASE WHERE USER = ?", (username,))
+        row = self.cursor.fetchall()
 
-        self.conn.commit()
+        if row != []:
+            raise UserError
+        else:
+            params = (username, masterpass)
+            self.cursor.execute("INSERT INTO USER_DATABASE (USER, MASTER_PASSWORD) VALUES (?, ?)", params)
+
+            self.conn.commit()
 
     def create_user_table(self, username):
 
@@ -56,10 +65,14 @@ class PasswordManager:
         field_3 = 'PASSWORD'
         field_type = 'TEXT'
 
-        self.cursor.execute("CREATE TABLE {tn} ({f1} {ft}, {f2} {ft}, {f3} {ft})"
-                  .format(tn=table_name, f1=field_1, f2=field_2, f3=field_3, ft=field_type))
+        try:
+            self.cursor.execute("CREATE TABLE {tn} ({f1} {ft}, {f2} {ft}, {f3} {ft})"
+                      .format(tn=table_name, f1=field_1, f2=field_2, f3=field_3, ft=field_type))
 
-        self.conn.commit()
+            self.conn.commit()
+
+        except sqlite3.OperationalError:
+            raise UserError
 
     def create_user_cmd(self):
 
@@ -78,10 +91,13 @@ class PasswordManager:
 
     def create_user(self, username, masterpass):
 
-        self.add_user_to_master(username, masterpass)
-        self.create_user_table(username)
+        try:
+            self.add_user_to_master(username, masterpass)
+            self.create_user_table(username)
 
-        self.user = User(username, masterpass)
+            self.user = User(username, masterpass)
+        except UserError:
+            print('---user already exists---')
 
     def login_cmd(self):
 
@@ -97,19 +113,21 @@ class PasswordManager:
         self.cursor.execute("SELECT * FROM USER_DATABASE WHERE USER = ?", (username,))
         row = self.cursor.fetchall()
 
-        if row[0][1] == password:
-            print('login successful')
-        else:
-            print('invalid password')
+        try:
+            if row[0][1] == password:
+                print('login successful')
+                self.user = User(username, password)
+            else:
+                print('invalid password')
+        except IndexError:
+            print('---user does not exist---')
 
-        self.user = User(username, password)
+    def retrieve_table(self):
 
-    def retrieve_table(self, user):
-
-        self.cursor.execute("SELECT * FROM " + user + "_PASSWORD_DATABASE")
+        self.cursor.execute("SELECT * FROM " + self.user.username + "_PASSWORD_DATABASE")
         table = self.cursor.fetchall()
 
-        user.fill_table(table)
+        self.user.fill_table(table)
         print(table)
 
     def add_user_entry_cmd(self):
@@ -123,12 +141,12 @@ class PasswordManager:
         print('Password: ')
         password = input()
 
-        self.add_user_entry(self.user, service, username, password)
+        self.add_user_entry(service, username, password)
 
-    def add_user_entry(self, user, service, service_username, service_password):
+    def add_user_entry(self, service, service_username, service_password):
 
         params = (service, service_username, service_password)
-        self.cursor.execute("INSERT INTO " + user + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
+        self.cursor.execute("INSERT INTO " + self.user.username + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
 
         self.conn.commit()
 
@@ -139,25 +157,13 @@ class PasswordManager:
         print('3: logout')
 
         commands = {
-            1: self.retrieve_table,
-            2: self.add_user_entry_cmd,
-            3: exit,
+            '1': self.retrieve_table,
+            '2': self.add_user_entry_cmd,
+            '3': exit,
         }
 
         commands[input()]()
 
 
-if __name__ == '__main__':
-
-    pm = PasswordManager()
-
-    command = sys.argv[1]
-
-    if command == 'newuser':
-        pm.create_user_cmd()
-    elif command == 'login':
-        pm.login_cmd()
-    else:
-        print('invalid command')
-
-    pm.get_user_command()
+class UserError(Exception):
+    pass
