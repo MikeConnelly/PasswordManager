@@ -8,7 +8,7 @@ functionality:
  - encrypt information in both tables
  - decrypt and retrieve information
  - change database library to sqalchemy?
- _ figure out crypto library
+ - figure out crypto library
 '''
 import os.path
 import sqlite3
@@ -115,20 +115,20 @@ class PasswordManager:
 
         try:
             if row[0][1] == password:
-                print('login successful')
+                print('---login successful---')
                 self.user = User(username, password)
             else:
-                print('invalid password')
+                print('---invalid password---')
         except IndexError:
             print('---user does not exist---')
 
     def retrieve_table(self):
 
-        self.cursor.execute("SELECT * FROM " + self.user.username + "_PASSWORD_DATABASE")
+        self.cursor.execute("SELECT * FROM " + self.user.database)
         table = self.cursor.fetchall()
 
-        self.user.fill_table(table)
-        print(table)
+        for entry in table:
+            print('Service: ' + entry[0] + ', Username ' + entry[1] + ', Password: ' + entry[2])
 
     def add_user_entry_cmd(self):
 
@@ -146,23 +146,27 @@ class PasswordManager:
     def add_user_entry(self, service, service_username, service_password):
 
         params = (service, service_username, service_password)
-        self.cursor.execute("INSERT INTO " + self.user.username + "_PASSWORD_DATABASE (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
+        self.cursor.execute("INSERT INTO " + self.user.database + " (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
 
         self.conn.commit()
 
     def get_user_command(self):
 
-        print('1: retrieve table')
-        print('2: add entry')
-        print('3: logout')
+        while True:
+            print('1: retrieve table')
+            print('2: add entry')
+            print('3: logout')
 
-        commands = {
-            '1': self.retrieve_table,
-            '2': self.add_user_entry_cmd,
-            '3': exit,
-        }
+            commands = {
+                '1': self.retrieve_table,
+                '2': self.add_user_entry_cmd,
+                '3': exit,
+            }
 
-        commands[input()]()
+            try:
+                commands[input()]()
+            except KeyError:
+                print('---invalid input---')
 
 
 class UserError(Exception):

@@ -6,7 +6,4 @@ class User:
 
         self.username = username
         self.password = password
-
-    def fill_table(self, table):
-
-        self.table = table
+        self.database = username + '_PASSWORD_DATABASE'
