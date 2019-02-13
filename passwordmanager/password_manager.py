@@ -7,7 +7,7 @@ functionality:
  - authenticate user information to login
  - encrypt information in both tables
  - decrypt and retrieve information
- - change database library to sqalchemy?
+ - change database library to sqalchemy
  - figure out crypto library
 '''
 import os.path
