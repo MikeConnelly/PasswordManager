@@ -13,6 +13,7 @@ functionality:
 import os.path
 import sqlite3
 from .user import User
+from .crypto import Crypto
 
 
 class PasswordManager:
@@ -21,6 +22,7 @@ class PasswordManager:
 
         self.user = None
         self.sqlite_file = 'pmdb.sqlite'
+        self.crypto = Crypto()
 
         if not os.path.isfile(self.sqlite_file):
             self.create_db()
@@ -52,7 +54,8 @@ class PasswordManager:
         if row != []:
             raise UserError
         else:
-            params = (username, masterpass)
+            hashed_masterpass = self.crypto.encrypt(masterpass)
+            params = (username, hashed_masterpass)
             self.cursor.execute("INSERT INTO USER_DATABASE (USER, MASTER_PASSWORD) VALUES (?, ?)", params)
 
             self.conn.commit()

@@ -1,5 +1,6 @@
 import sys
 from passwordmanager import password_manager
+from passwordmanager import crypto
 
 
 if __name__ == '__main__':
@@ -19,3 +20,14 @@ if __name__ == '__main__':
             print('invalid command')
 
     pm.get_user_command()
+
+    '''
+    password = 'secret'
+
+    c = crypto.Crypto()
+    hashed = c.encrypt(password)
+    print(hashed)
+
+    unhashed = c.decrypt(hashed)
+    print(unhashed)
+    '''

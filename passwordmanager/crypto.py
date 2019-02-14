@@ -6,7 +6,7 @@ class Crypto:
 
     def __init__(self):
 
-        self.key_file = '/data/key.txt'
+        self.key_file = './data/key.bin'
 
         if not os.path.isfile(self.key_file):
             self.init_key()
@@ -16,14 +16,34 @@ class Crypto:
     def init_key(self):
 
         key = Fernet.generate_key()
-        key_string = key.decode()
 
-        f = open('/data/key.txt','a+')
-        f.write(key_string)
-        f.close()
+        with open(self.key_file, 'wb') as f:
 
-    def encrypt(password):
-        pass
+            f.write(key)
 
-    def decrypt(password):
-        pass
+    def encrypt(self, password):
+
+        key = None
+
+        with open(self.key_file, 'rb') as f:
+
+            key = f.read()
+
+        cipher_suite = Fernet(key)
+        ciphered_text = cipher_suite.encrypt(bytes(password.encode()))
+
+        return ciphered_text
+
+    def decrypt(self, cipher_text):
+
+        key = None
+
+        with open(self.key_file, 'rb') as f:
+
+            key = f.read()
+
+        cipher_suite = Fernet(key)
+        uncipher_text = (cipher_suite.decrypt(cipher_text))
+        password = bytes(uncipher_text).decode('utf-8')
+
+        return password
