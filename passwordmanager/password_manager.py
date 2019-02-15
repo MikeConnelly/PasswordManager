@@ -2,7 +2,7 @@
 to-do:
  - look into / change database library to sqalchemy
 '''
-import os.path
+import os
 import sqlite3
 from .user import User
 from .crypto import Crypto
@@ -11,6 +11,9 @@ from .crypto import Crypto
 class PasswordManager:
 
     def __init__(self):
+
+        if not os.path.exists('./data/'):
+            os.makedirs('./data/')
 
         self.user = None
         self.sqlite_file = './data/pmdb.sqlite'
@@ -111,7 +114,7 @@ class PasswordManager:
         try:
             hashed_pass = row[0][1]
             masterpass = self.crypto.decrypt(hashed_pass)
-            
+
             if masterpass == password:
                 print('---login successful---')
                 self.user = User(username, password)
