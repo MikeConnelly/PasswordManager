@@ -1,14 +1,6 @@
 '''
-functionality:
- - create table of users and master passwords
- - register users into master table
- - for each user create a table of services/usernames/passwords
- - add entries to user tables
- - authenticate user information to login
- - encrypt information in both tables
- - decrypt and retrieve information
- - change database library to sqalchemy
- - figure out crypto library
+to-do:
+ - look into / change database library to sqalchemy
 '''
 import os.path
 import sqlite3
@@ -21,7 +13,7 @@ class PasswordManager:
     def __init__(self):
 
         self.user = None
-        self.sqlite_file = 'pmdb.sqlite'
+        self.sqlite_file = './data/pmdb.sqlite'
         self.crypto = Crypto()
 
         if not os.path.isfile(self.sqlite_file):
@@ -117,7 +109,10 @@ class PasswordManager:
         row = self.cursor.fetchall()
 
         try:
-            if row[0][1] == password:
+            hashed_pass = row[0][1]
+            masterpass = self.crypto.decrypt(hashed_pass)
+            
+            if masterpass == password:
                 print('---login successful---')
                 self.user = User(username, password)
             else:
@@ -131,7 +126,8 @@ class PasswordManager:
         table = self.cursor.fetchall()
 
         for entry in table:
-            print('Service: ' + entry[0] + ', Username ' + entry[1] + ', Password: ' + entry[2])
+            password = self.crypto.decrypt(entry[2])
+            print('Service: ' + entry[0] + ', Username ' + entry[1] + ', Password: ' + password)
 
     def add_user_entry_cmd(self):
 
@@ -148,7 +144,9 @@ class PasswordManager:
 
     def add_user_entry(self, service, service_username, service_password):
 
-        params = (service, service_username, service_password)
+        hashed_pass = self.crypto.encrypt(service_password)
+
+        params = (service, service_username, hashed_pass)
         self.cursor.execute("INSERT INTO " + self.user.database + " (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
 
         self.conn.commit()

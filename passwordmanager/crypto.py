@@ -10,8 +10,6 @@ class Crypto:
 
         if not os.path.isfile(self.key_file):
             self.init_key()
-        else:
-            print('stored!')
 
     def init_key(self):
 
