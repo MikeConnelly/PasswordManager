@@ -72,21 +72,6 @@ class PasswordManager:
         except sqlite3.OperationalError:
             raise UserError
 
-    def create_user_cmd(self):
-
-        print('Enter username: ')
-        username = input()
-
-        masterpass = ''
-        while not masterpass:
-            print('Create password: ')
-            masterpass = input()
-            print('Confirm password: ')
-            if input() != masterpass:
-                masterpass = ''
-
-        self.create_user(username, masterpass)
-
     def create_user(self, username, masterpass):
 
         try:
@@ -96,15 +81,6 @@ class PasswordManager:
             self.user = User(username, masterpass)
         except UserError:
             print('---user already exists---')
-
-    def login_cmd(self):
-
-        print('Enter username: ')
-        username = input()
-        print('Enter password: ')
-        password = input()
-
-        self.login(username, password)
 
     def login(self, username, password):
 
@@ -132,6 +108,41 @@ class PasswordManager:
             password = self.crypto.decrypt(entry[2])
             print('Service: ' + entry[0] + ', Username ' + entry[1] + ', Password: ' + password)
 
+    def add_user_entry(self, service, service_username, service_password):
+
+        hashed_pass = self.crypto.encrypt(service_password)
+
+        params = (service, service_username, hashed_pass)
+        self.cursor.execute("INSERT INTO " + self.user.database + " (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
+
+        self.conn.commit()
+
+    def create_user_cmd(self):
+
+        print('Enter username: ')
+        username = input()
+        masterpass = ''
+
+        while not masterpass:
+
+            print('Create password: ')
+            masterpass = input()
+
+            print('Confirm password: ')
+            if input() != masterpass:
+                masterpass = ''
+
+        self.create_user(username, masterpass)
+
+    def login_cmd(self):
+
+        print('Enter username: ')
+        username = input()
+        print('Enter password: ')
+        password = input()
+
+        self.login(username, password)
+
     def add_user_entry_cmd(self):
 
         print('Service: ')
@@ -144,15 +155,6 @@ class PasswordManager:
         password = input()
 
         self.add_user_entry(service, username, password)
-
-    def add_user_entry(self, service, service_username, service_password):
-
-        hashed_pass = self.crypto.encrypt(service_password)
-
-        params = (service, service_username, hashed_pass)
-        self.cursor.execute("INSERT INTO " + self.user.database + " (SERVICE, USERNAME, PASSWORD) VALUES (?, ?, ?)", params)
-
-        self.conn.commit()
 
     def get_user_command(self):
 
