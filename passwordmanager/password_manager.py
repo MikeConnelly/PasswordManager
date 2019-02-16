@@ -1,5 +1,6 @@
 '''
 to-do:
+ - create a file that holds the directories of key and db for different users
  - look into / change database library to sqalchemy
 '''
 import os
@@ -173,6 +174,20 @@ class PasswordManager:
                 commands[input()]()
             except KeyError:
                 print('---invalid input---')
+
+    '''
+    if key exists copy and move it
+    change the key_file
+    '''
+    def change_key_dir(self, dir):
+        pass
+
+    '''
+    if the db exists copy and move it
+    change the db_file
+    '''
+    def change_db_dir(self, dir):
+        pass
 
 
 class UserError(Exception):
