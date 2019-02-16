@@ -1,0 +1,2 @@
+default_db_dir='./data/',
+default_key_dir='./data/',

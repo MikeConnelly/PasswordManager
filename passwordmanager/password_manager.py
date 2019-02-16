@@ -11,7 +11,7 @@ from .crypto import Crypto
 
 class PasswordManager:
 
-    def __init__(self):
+    def __init__(self, paths):
 
         if not os.path.exists('./data/'):
             os.makedirs('./data/')
