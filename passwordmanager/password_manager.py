@@ -17,8 +17,8 @@ class PasswordManager:
             os.makedirs('./data/')
 
         self.user = None
-        self.sqlite_file = './data/pmdb.sqlite'
-        self.crypto = Crypto()
+        self.sqlite_file = paths[database_path]
+        self.crypto = Crypto(paths[key_path])
 
         if not os.path.isfile(self.sqlite_file):
             self.create_db()

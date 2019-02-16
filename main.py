@@ -4,11 +4,31 @@ from passwordmanager import password_manager
 from passwordmanager import crypto
 
 
+def get_paths(path_file):
+    """
+    Returns contents of /docs/paths.txt file as a dictionary
+    """
+
+    paths = []
+    with open(path_file, 'r') as f:
+        paths=f.read().split('\n')
+
+    path_dict = {}
+    for line in paths:
+        if line:
+            path = line.split('=')
+            path_dict[path[0]] = path[1]
+
+    return path_dict
+
+
 if __name__ == '__main__':
 
-    path_file = 'paths.txt'
+    path_file = '/docs/paths.txt'
     if os.path.isfile(path_file):
         paths = get_paths(path_file)
+    else:
+        raise(EnvironmentError)
 
     pm = password_manager.PasswordManager(paths)
 
@@ -25,20 +45,3 @@ if __name__ == '__main__':
             print('invalid command')
 
     pm.get_user_command()
-
-
-'''
-return paths file as a dictionary
-'''
-def get_paths():
-
-    paths = []
-    with open(path_file, 'r') as f:
-        paths=f.read().split(',')
-
-    path_dict = {}
-    for line in paths:
-        path = line.split('=')
-        path_dict[path[0]) = path[1]
-
-    return path_dict

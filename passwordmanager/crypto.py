@@ -4,9 +4,9 @@ from cryptography.fernet import Fernet
 
 class Crypto:
 
-    def __init__(self):
+    def __init__(self, key_path):
 
-        self.key_file = './data/key.bin'
+        self.key_file = key_path
 
         if not os.path.isfile(self.key_file):
             self.init_key()
