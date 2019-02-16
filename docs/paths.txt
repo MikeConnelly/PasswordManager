@@ -1,2 +1,2 @@
-database_path='./data/pmdb.sqlite'
-key_path='./data/key.bin'
+database_path=./data/pmdb.sqlite
+key_path=./data/key.bin

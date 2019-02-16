@@ -17,8 +17,8 @@ class PasswordManager:
             os.makedirs('./data/')
 
         self.user = None
-        self.sqlite_file = paths[database_path]
-        self.crypto = Crypto(paths[key_path])
+        self.sqlite_file = paths['database_path']
+        self.crypto = Crypto(paths['key_path'])
 
         if not os.path.isfile(self.sqlite_file):
             self.create_db()
@@ -175,18 +175,18 @@ class PasswordManager:
             except KeyError:
                 print('---invalid input---')
 
-    '''
-    if key exists copy and move it
-    change the key_file
-    '''
     def change_key_dir(self, dir):
+        """
+        Change the directory where the key is stored.
+        If a key already exists move it to the new directory.
+        """
         pass
 
-    '''
-    if the db exists copy and move it
-    change the db_file
-    '''
     def change_db_dir(self, dir):
+        """
+        Change the directory where the database is stored.
+        If a database already exists move it to the new directory.
+        """
         pass
 
 

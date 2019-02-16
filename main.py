@@ -6,7 +6,7 @@ from passwordmanager import crypto
 
 def get_paths(path_file):
     """
-    Returns contents of /docs/paths.txt file as a dictionary
+    Returns contents of the ./docs/paths.txt file as a dictionary
     """
 
     paths = []
@@ -24,7 +24,9 @@ def get_paths(path_file):
 
 if __name__ == '__main__':
 
-    path_file = '/docs/paths.txt'
+    print(sys.argv)
+
+    path_file = './docs/paths.txt'
     if os.path.isfile(path_file):
         paths = get_paths(path_file)
     else:
