@@ -6,7 +6,6 @@ to-do:
 from .crypto import Crypto
 from .models import Base, Service, User
 import os
-import sqlite3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
