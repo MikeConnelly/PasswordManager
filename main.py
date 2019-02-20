@@ -2,7 +2,6 @@ import sys
 import os
 import shutil
 from passwordmanager import password_manager
-from passwordmanager import crypto
 
 
 def get_paths(path_file):
