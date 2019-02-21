@@ -46,15 +46,6 @@ class PasswordManager:
             self.session.add(user)
             self.session.commit()
 
-
-    def create_user(self, username, masterpass):
-
-        try:
-            self.add_user_to_master(username, masterpass)
-            self.login(username, masterpass)
-        except UserError:
-            print('---user already exists---')
-
     def login(self, username, password):
 
         user = self.session.query(User).filter(User.username == username).one()
@@ -71,9 +62,17 @@ class PasswordManager:
         except IndexError:
             print('---user does not exist---')
 
+    def create_user(self, username, masterpass):
+
+        try:
+            self.add_user_to_master(username, masterpass)
+            self.login(username, masterpass)
+        except UserError:
+            print('---user already exists---')
+
     def retrieve_table(self):
 
-        table = self.session.query(Service).filter(Service.user_id == self.user.id).all()
+        table = self.user.services
 
         for service in table:
             password = self.crypto.decrypt(service.password)
@@ -93,7 +92,69 @@ class PasswordManager:
         self.session.commit()
 
     def remove_entry(self):
-        pass
+
+        table = self.user.services
+
+        selection = None
+        index = 1
+        map = {}
+        for service in table:
+            map[index] = service
+            print('Index: ' + str(index) + ', Service: ' + service.name)
+            index += 1
+
+        while not selection:
+            print('Enter the index of the service you want to remove')
+            try:
+                selection = map[int(input())]
+            except (KeyError, ValueError):
+                print('---invalid input---')
+
+        print(selection.name + ' successfully removed')
+        self.session.delete(selection)
+        self.session.commit()
+
+    def change_entry(self):
+        '''
+        CURRENTLY NOT WORKING
+        '''
+
+        table = self.user.services
+
+        selection = None
+        index = 1
+        map = {}
+        for service in table:
+            map[index] = service
+            print('Index: ' + str(index) + ', Service: ' + service.name)
+            index += 1
+
+        while not selection:
+            print('Enter the index of the service you want to change')
+            try:
+                selection = map[int(input())]
+            except (KeyError, ValueError):
+                print('---invalid input---')
+
+        field = None
+        fields = {
+            'name': selection.name,
+            'email': selection.email,
+            'url': selection.url,
+            'password': selection.password
+        }
+        print('which field would you like to edit: name, email, url, or password?')
+        while not field:
+            try:
+                i = input()
+                field = fields[i]
+            except KeyError:
+                print('---invalid input---')
+
+        print('enter new ' + i)
+        print(fields[i])
+        fields[i] = input()
+        self.session.commit()
 
     def logout(self):
 
@@ -139,32 +200,20 @@ class PasswordManager:
 
         self.add_user_entry(service, username, password)
 
-    def remove_entry_cmd(self):
-
-        self.retrieve_table()
-
-        print('name the service you wish to remove')
-        service = input()
-
-        self.remove_entry(service)
-
-    def search_cmd(self):
-        pass
-
     def get_user_command(self):
 
         while True:
             print('1: retrieve table')
             print('2: add an entry')
             print('3: remove an entry')
-            print('4: search entries')
+            print('4: change an entry')
             print('5: logout')
 
             commands = {
                 '1': self.retrieve_table,
                 '2': self.add_user_entry_cmd,
-                '3': self.remove_entry_cmd,
-                '4': self.search_cmd,
+                '3': self.remove_entry,
+                '4': self.change_entry,
                 '5': self.logout
             }
 
