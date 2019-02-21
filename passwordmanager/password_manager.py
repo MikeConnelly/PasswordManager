@@ -4,7 +4,7 @@ to-do:
  - use absolute file paths for simplicity
 '''
 from .crypto import Crypto
-from .models import Base, Service, User
+from .models import Base, Account, User
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -30,6 +30,9 @@ class PasswordManager:
 
 
     def add_user_to_master(self, username, masterpass):
+        '''
+        Adds new user to user_table in database
+        '''
 
         # check if user already exists
         list = self.session.query(User).filter(User.username == username).all()
@@ -47,6 +50,9 @@ class PasswordManager:
             self.session.commit()
 
     def login(self, username, password):
+        '''
+        Sets user for current session
+        '''
 
         user = self.session.query(User).filter(User.username == username).one()
 
@@ -63,6 +69,9 @@ class PasswordManager:
             print('---user does not exist---')
 
     def create_user(self, username, masterpass):
+        '''
+        Adds new user to database and logs them in
+        '''
 
         try:
             self.add_user_to_master(username, masterpass)
@@ -71,36 +80,45 @@ class PasswordManager:
             print('---user already exists---')
 
     def retrieve_table(self):
+        '''
+        Prints the table of accounts for the current user
+        '''
 
-        table = self.user.services
+        table = self.user.accounts
 
-        for service in table:
-            password = self.crypto.decrypt(service.password)
-            print('Service: ' + service.name + ', Email ' + service.email + ', Password: ' + password)
+        for account in table:
+            password = self.crypto.decrypt(account.password)
+            print('Service: ' + account.name + ', Email ' + account.email + ', Password: ' + password)
 
-    def add_user_entry(self, service_name, service_email, service_password):
+    def add_user_entry(self, account_name, account_email, account_password):
+        '''
+        Add an account to the current user's table
+        '''
 
-        hashed_pass = self.crypto.encrypt(service_password)
+        hashed_pass = self.crypto.encrypt(account_password)
 
-        service = Service()
-        service.name = service_name
-        service.email = service_email
-        service.password = hashed_pass
-        service.user_id = self.user.id
+        account = Account()
+        account.name = account_name
+        account.email = account_email
+        account.password = hashed_pass
+        account.user_id = self.user.id
 
-        self.session.add(service)
+        self.session.add(account)
         self.session.commit()
 
     def remove_entry(self):
+        '''
+        Removes an account from the current user's table
+        '''
 
-        table = self.user.services
+        table = self.user.accounts
 
         selection = None
         index = 1
         map = {}
-        for service in table:
-            map[index] = service
-            print('Index: ' + str(index) + ', Service: ' + service.name)
+        for account in table:
+            map[index] = account
+            print('Index: ' + str(index) + ', Service: ' + account.name)
             index += 1
 
         while not selection:
@@ -119,14 +137,14 @@ class PasswordManager:
         CURRENTLY NOT WORKING
         '''
 
-        table = self.user.services
+        table = self.user.accounts
 
         selection = None
         index = 1
         map = {}
-        for service in table:
-            map[index] = service
-            print('Index: ' + str(index) + ', Service: ' + service.name)
+        for account in table:
+            map[index] = account
+            print('Index: ' + str(index) + ', Service: ' + account.name)
             index += 1
 
         while not selection:
@@ -157,6 +175,9 @@ class PasswordManager:
         self.session.commit()
 
     def logout(self):
+        '''
+        Closes database session and ends the exits the program
+        '''
 
         self.session.close()
         exit(0)
@@ -189,8 +210,8 @@ class PasswordManager:
 
     def add_user_entry_cmd(self):
 
-        print('Service: ')
-        service = input()
+        print('Account: ')
+        account = input()
 
         print('Username: ')
         username = input()
@@ -198,7 +219,7 @@ class PasswordManager:
         print('Password: ')
         password = input()
 
-        self.add_user_entry(service, username, password)
+        self.add_user_entry(account, username, password)
 
     def get_user_command(self):
 

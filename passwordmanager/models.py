@@ -5,8 +5,8 @@ from sqlalchemy.orm import sessionmaker, relationship
 Base = declarative_base()
 
 
-class Service(Base):
-    __tablename__ = 'password_table'
+class Account(Base):
+    __tablename__ = 'account_table'
 
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String)
@@ -22,4 +22,4 @@ class User(Base):
     id = Column('id', Integer, primary_key=True)
     username = Column('username', String, unique=True)
     master_password = Column('password', String)
-    services = relationship('Service')
+    accounts = relationship('Account')
