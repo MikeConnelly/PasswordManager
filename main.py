@@ -109,7 +109,7 @@ if __name__ == '__main__':
             else:
                 print('---specified path does not exist---')
                 exit()
-
+    
     if not os.path.exists('./data/'):
         os.makedirs('./data/')
 

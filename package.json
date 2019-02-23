@@ -1,0 +1,30 @@
+{
+  "name": "PasswordManager",
+  "version": "1.0.0",
+  "description": "WIP",
+  "main": "main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MikeConnelly/PasswordManager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MikeConnelly/PasswordManager/issues"
+  },
+  "homepage": "https://github.com/MikeConnelly/PasswordManager#readme",
+  "devDependencies": {
+    "electron": "^4.0.5"
+  },
+  "dependencies": {
+    "python-shell": "^1.0.7"
+  }
+}
