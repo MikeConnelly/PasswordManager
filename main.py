@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 from passwordmanager import password_manager
+from passwordmanager import interface
 
 
 def get_paths(path_file):
@@ -114,17 +115,6 @@ if __name__ == '__main__':
         os.makedirs('./data/')
 
     pm = password_manager.PasswordManager(paths)
+    cli = interface.Interface(pm)
 
-    while pm.user == None:
-
-        print('enter login or newuser')
-        command = input()
-
-        if command == 'newuser':
-            pm.create_user_cmd()
-        elif command == 'login':
-            pm.login_cmd()
-        else:
-            print('invalid command')
-
-    pm.get_user_command()
+    cli.get_user()

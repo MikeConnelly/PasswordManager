@@ -87,8 +87,9 @@ class PasswordManager:
         table = self.user.accounts
 
         for account in table:
-            password = self.crypto.decrypt(account.password)
-            print('Service: ' + account.name + ', Email ' + account.email + ', Password: ' + password)
+            account.password = self.crypto.decrypt(account.password)
+        
+        return table
 
     def add_user_entry(self, account_name, account_email, account_password):
         '''
@@ -106,30 +107,12 @@ class PasswordManager:
         self.session.add(account)
         self.session.commit()
 
-    def remove_entry(self):
+    def remove_entry(self, entry):
         '''
         Removes an account from the current user's table
         '''
 
-        table = self.user.accounts
-
-        selection = None
-        index = 1
-        map = {}
-        for account in table:
-            map[index] = account
-            print('Index: ' + str(index) + ', Service: ' + account.name)
-            index += 1
-
-        while not selection:
-            print('Enter the index of the service you want to remove')
-            try:
-                selection = map[int(input())]
-            except (KeyError, ValueError):
-                print('---invalid input---')
-
-        print(selection.name + ' successfully removed')
-        self.session.delete(selection)
+        self.session.delete(entry)
         self.session.commit()
 
     def change_entry(self):
@@ -181,67 +164,6 @@ class PasswordManager:
 
         self.session.close()
         exit(0)
-
-    def create_user_cmd(self):
-
-        print('Enter username: ')
-        username = input()
-        masterpass = ''
-
-        while not masterpass:
-
-            print('Create password: ')
-            masterpass = input()
-
-            print('Confirm password: ')
-            if input() != masterpass:
-                masterpass = ''
-
-        self.create_user(username, masterpass)
-
-    def login_cmd(self):
-
-        print('Enter username: ')
-        username = input()
-        print('Enter password: ')
-        password = input()
-
-        self.login(username, password)
-
-    def add_user_entry_cmd(self):
-
-        print('Account: ')
-        account = input()
-
-        print('Username: ')
-        username = input()
-
-        print('Password: ')
-        password = input()
-
-        self.add_user_entry(account, username, password)
-
-    def get_user_command(self):
-
-        while True:
-            print('1: retrieve table')
-            print('2: add an entry')
-            print('3: remove an entry')
-            print('4: change an entry')
-            print('5: logout')
-
-            commands = {
-                '1': self.retrieve_table,
-                '2': self.add_user_entry_cmd,
-                '3': self.remove_entry,
-                '4': self.change_entry,
-                '5': self.logout
-            }
-
-            try:
-                commands[input()]()
-            except KeyError:
-                print('---invalid input---')
 
 
 class UserError(Exception):
