@@ -84,10 +84,15 @@ class PasswordManager:
         Prints the table of accounts for the current user
         '''
 
-        table = self.user.accounts
-
-        for account in table:
-            account.password = self.crypto.decrypt(account.password)
+        table = []
+        for account in self.user.accounts:
+            entry = {
+                'name': account.name,
+                'email': account.email,
+                'url': account.url,
+                'password': self.crypto.decrypt(account.password)
+            }
+            table.append(entry)
         
         return table
 
@@ -115,46 +120,12 @@ class PasswordManager:
         self.session.delete(entry)
         self.session.commit()
 
-    def change_entry(self):
+    def change_entry(self, entry, field, new_field):
         '''
-        CURRENTLY NOT WORKING
+        Changes a field in an account
         '''
 
-        table = self.user.accounts
-
-        selection = None
-        index = 1
-        map = {}
-        for account in table:
-            map[index] = account
-            print('Index: ' + str(index) + ', Service: ' + account.name)
-            index += 1
-
-        while not selection:
-            print('Enter the index of the service you want to change')
-            try:
-                selection = map[int(input())]
-            except (KeyError, ValueError):
-                print('---invalid input---')
-
-        field = None
-        fields = {
-            'name': selection.name,
-            'email': selection.email,
-            'url': selection.url,
-            'password': selection.password
-        }
-        print('which field would you like to edit: name, email, url, or password?')
-        while not field:
-            try:
-                i = input()
-                field = fields[i]
-            except KeyError:
-                print('---invalid input---')
-
-        print('enter new ' + i)
-        print(fields[i])
-        fields[i] = input()
+        self.session.query(Account).filter(Account.id == entry.id).update({entry: new_field})
         self.session.commit()
 
     def logout(self):

@@ -18,6 +18,8 @@ class Interface:
                 self.login_cmd()
             else:
                 print('invalid command')
+            
+        self.get_cmd()
     
     def get_cmd(self):
     
@@ -31,7 +33,7 @@ class Interface:
             commands = {
                 '1': self.retrieve_table_cmd,
                 '2': self.add_user_entry_cmd,
-                '3': self.pm.remove_entry,
+                '3': self.remove_entry_cmd,
                 '4': self.change_entry_cmd,
                 '5': self.pm.logout
             }
@@ -72,7 +74,7 @@ class Interface:
         table = self.pm.retrieve_table()
 
         for account in table:
-            print('Service: ' + account.name + ', Email ' + account.email + ', Password: ' + account.password)
+            print('Service: ' + account['name'] + ', Email ' + account['email'] + ', Password: ' + account['password'])
 
     def add_user_entry_cmd(self):
 
@@ -87,8 +89,8 @@ class Interface:
 
         self.pm.add_user_entry(account, username, password)
         print('---account added---')
-    
-    def remove_entry_cmd(self):
+
+    def select_user_account_cmd(self, mode):
         
         table = self.pm.user.accounts
 
@@ -101,14 +103,44 @@ class Interface:
             index += 1
 
         while not selection:
-            print('Enter the index of the service you want to remove')
+            print('Enter the index of the service you want to ' + mode)
             try:
                 selection = map[int(input())]
             except (KeyError, ValueError):
                 print('---invalid input---')
-
+        
+        return selection
+    
+    def remove_entry_cmd(self):
+        
+        selection = self.select_user_account_cmd('remove')
         self.pm.remove_entry(selection)
         print(selection.name + ' successfully removed')
     
     def change_entry_cmd(self):
-        pass
+        
+        selection = self.select_user_account_cmd('change')
+
+        field_selection = None
+        fields = {
+            1: selection.name,
+            2: selection.email,
+            3: selection.url,
+            4: selection.password
+        }
+
+        for field in fields:
+            print('1: name ' + field)
+        
+        while not field_selection:
+            print('Enter the index of the field you want to change')
+            try:
+                i = input()
+                field = fields[i]
+            except KeyError:
+                print('---invalid input---')
+
+        print('enter new field')
+        new_field = input()
+
+        self.pm.change_entry(selection, field_selection, new_field)
