@@ -129,8 +129,9 @@ class Interface:
             4: selection.password
         }
 
+        index = 1
         for field in fields:
-            print('1: name ' + field)
+            print(str(index) + ': ' + str(fields[field]))
         
         while not field_selection:
             print('Enter the index of the field you want to change')
