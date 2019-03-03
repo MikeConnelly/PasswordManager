@@ -16,7 +16,6 @@ class Crypto:
         key = Fernet.generate_key()
 
         with open(self.key_file, 'wb') as f:
-
             f.write(key)
 
     def encrypt(self, password):
@@ -24,7 +23,6 @@ class Crypto:
         key = None
 
         with open(self.key_file, 'rb') as f:
-
             key = f.read()
 
         cipher_suite = Fernet(key)
@@ -37,7 +35,6 @@ class Crypto:
         key = None
 
         with open(self.key_file, 'rb') as f:
-
             key = f.read()
 
         cipher_suite = Fernet(key)

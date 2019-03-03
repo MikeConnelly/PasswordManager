@@ -87,6 +87,7 @@ class PasswordManager:
         table = []
         for account in self.user.accounts:
             entry = {
+                'id': account.id,
                 'name': account.name,
                 'email': self.crypto.decrypt(account.email),
                 'password': self.crypto.decrypt(account.password),
@@ -95,20 +96,6 @@ class PasswordManager:
             table.append(entry)
         
         return table
-    
-    def get_password(self, account):
-        '''
-        Decrypts and returns user's stored password for given account
-        '''
-
-        return self.crypto.decrypt(account.password)
-    
-    def get_email(self, account):
-        '''
-        Decrypts and returns user's stored amail for given account
-        '''
-        
-        return self.crypto.decrypt(account.email)
 
     def add_user_entry(self, account_name, account_email, account_password, account_url=''):
         '''
@@ -128,12 +115,13 @@ class PasswordManager:
         self.session.add(account)
         self.session.commit()
 
-    def remove_entry(self, entry):
+    def remove_entry(self, account):
         '''
         Removes an account from the current user's table
         '''
 
-        self.session.delete(entry)
+        row = self.session.query(Account).filter(Account.id == account['id']).one()
+        self.session.delete(row)
         self.session.commit()
 
     def change_entry(self, account, col, new_field):
@@ -141,7 +129,10 @@ class PasswordManager:
         Changes a field in an account
         '''
 
-        self.session.query(Account).filter(Account.id == account.id).update({col: new_field})
+        if col == 'email' or col == 'password':
+            new_field = self.crypto.encrypt(new_field)
+        
+        self.session.query(Account).filter(Account.id == account['id']).update({col: new_field})
         self.session.commit()
 
     def logout(self):

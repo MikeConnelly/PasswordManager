@@ -73,10 +73,14 @@ class Interface:
 
         table = self.pm.retrieve_table()
 
+        print('---table---')
         for account in table:
-            print('Service: ' + account['name'] + ', Email ' + account['email'] + ', Password: ' + account['password'] + ', URL: ' + account['url'])
+            print('Service: ' + account['name'] + ', Email: ' + account['email'] + ', Password: ' + account['password'] + ', URL: ' + account['url'])
+        print('-----------')
 
     def add_user_entry_cmd(self):
+
+        print('---add an entry---')
 
         print('Account: ')
         account = input()
@@ -95,14 +99,14 @@ class Interface:
 
     def select_user_account_cmd(self, mode):
         
-        table = self.pm.user.accounts
+        table = self.pm.retrieve_table()
 
         selection = None
         index = 1
         map = {}
         for account in table:
             map[index] = account
-            print(str(index) + ': Account: ' + account.name)
+            print(str(index) + ': ' + account['name'])
             index += 1
 
         while not selection:
@@ -116,19 +120,23 @@ class Interface:
     
     def remove_entry_cmd(self):
         
+        print('---remove an entry---')
+
         selection = self.select_user_account_cmd('remove')
         self.pm.remove_entry(selection)
-        print(selection.name + ' successfully removed')
+
+        print(selection['name'] + ' successfully removed')
     
     def change_entry_cmd(self):
-        
+
+        print('---change an entry---')
         selection = self.select_user_account_cmd('change')
 
         fields = {
-            1: selection.name,
-            2: self.pm.get_email(selection.email),
-            3: self.pm.get_password(selection.password),
-            4: selection.url
+            1: selection['name'],
+            2: selection['email'],
+            3: selection['password'],
+            4: selection['url']
         }
         cols = {
             1: 'name',
@@ -137,10 +145,8 @@ class Interface:
             4: 'url'
         }
 
-        index = 1
-        for field in fields:
-            print(str(index) + ': ' + str(fields[field]))
-            index += 1
+        for key, value in fields.items():
+            print(str(key) + '. ' + cols[key] + ': ' + str(value))
 
         col_selection = None
         while not col_selection:
@@ -155,3 +161,4 @@ class Interface:
         new_field = input()
 
         self.pm.change_entry(selection, col_selection, new_field)
+        print('---account successfully updated---')
