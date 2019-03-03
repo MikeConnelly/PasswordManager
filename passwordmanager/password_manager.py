@@ -88,25 +88,41 @@ class PasswordManager:
         for account in self.user.accounts:
             entry = {
                 'name': account.name,
-                'email': account.email,
-                'url': account.url,
-                'password': self.crypto.decrypt(account.password)
+                'email': self.crypto.decrypt(account.email),
+                'password': self.crypto.decrypt(account.password),
+                'url': account.url
             }
             table.append(entry)
         
         return table
+    
+    def get_password(self, account):
+        '''
+        Decrypts and returns user's stored password for given account
+        '''
 
-    def add_user_entry(self, account_name, account_email, account_password):
+        return self.crypto.decrypt(account.password)
+    
+    def get_email(self, account):
+        '''
+        Decrypts and returns user's stored amail for given account
+        '''
+        
+        return self.crypto.decrypt(account.email)
+
+    def add_user_entry(self, account_name, account_email, account_password, account_url=''):
         '''
         Add an account to the current user's table
         '''
 
         hashed_pass = self.crypto.encrypt(account_password)
+        hashed_email = self.crypto.encrypt(account_email)
 
         account = Account()
         account.name = account_name
-        account.email = account_email
+        account.email = hashed_email
         account.password = hashed_pass
+        account.url = account_url
         account.user_id = self.user.id
 
         self.session.add(account)
@@ -120,12 +136,12 @@ class PasswordManager:
         self.session.delete(entry)
         self.session.commit()
 
-    def change_entry(self, entry, field, new_field):
+    def change_entry(self, account, col, new_field):
         '''
         Changes a field in an account
         '''
 
-        self.session.query(Account).filter(Account.id == entry.id).update({entry: new_field})
+        self.session.query(Account).filter(Account.id == account.id).update({col: new_field})
         self.session.commit()
 
     def logout(self):

@@ -74,20 +74,23 @@ class Interface:
         table = self.pm.retrieve_table()
 
         for account in table:
-            print('Service: ' + account['name'] + ', Email ' + account['email'] + ', Password: ' + account['password'])
+            print('Service: ' + account['name'] + ', Email ' + account['email'] + ', Password: ' + account['password'] + ', URL: ' + account['url'])
 
     def add_user_entry_cmd(self):
 
         print('Account: ')
         account = input()
 
-        print('Username: ')
+        print('Email: ')
         username = input()
 
         print('Password: ')
         password = input()
 
-        self.pm.add_user_entry(account, username, password)
+        print('URL (optional): ')
+        url = input()
+
+        self.pm.add_user_entry(account, username, password, url)
         print('---account added---')
 
     def select_user_account_cmd(self, mode):
@@ -99,11 +102,11 @@ class Interface:
         map = {}
         for account in table:
             map[index] = account
-            print('Index: ' + str(index) + ', Service: ' + account.name)
+            print(str(index) + ': Account: ' + account.name)
             index += 1
 
         while not selection:
-            print('Enter the index of the service you want to ' + mode)
+            print('Enter the index of the account you want to ' + mode)
             try:
                 selection = map[int(input())]
             except (KeyError, ValueError):
@@ -121,27 +124,34 @@ class Interface:
         
         selection = self.select_user_account_cmd('change')
 
-        field_selection = None
         fields = {
             1: selection.name,
-            2: selection.email,
-            3: selection.url,
-            4: selection.password
+            2: self.pm.get_email(selection.email),
+            3: self.pm.get_password(selection.password),
+            4: selection.url
+        }
+        cols = {
+            1: 'name',
+            2: 'email',
+            3: 'password',
+            4: 'url'
         }
 
         index = 1
         for field in fields:
             print(str(index) + ': ' + str(fields[field]))
-        
-        while not field_selection:
+            index += 1
+
+        col_selection = None
+        while not col_selection:
             print('Enter the index of the field you want to change')
             try:
-                i = input()
-                field = fields[i]
+                i = int(input())
+                col_selection = cols[i]
             except KeyError:
                 print('---invalid input---')
 
         print('enter new field')
         new_field = input()
 
-        self.pm.change_entry(selection, field_selection, new_field)
+        self.pm.change_entry(selection, col_selection, new_field)
