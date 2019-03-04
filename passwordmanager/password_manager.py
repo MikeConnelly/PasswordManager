@@ -2,6 +2,8 @@
 to-do:
  - create a file that holds the directories of key and db for different users
  - use absolute file paths for simplicity
+ - change key and db dir to single line args
+ - change how many args can be passed into main / how they're handled
 '''
 from .crypto import Crypto
 from .models import Base, Account, User

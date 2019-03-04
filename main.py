@@ -31,7 +31,7 @@ def change_key_dir(path_file, path_dict, new_dir):
     new_path = new_dir + 'key.bin'
 
     try:
-        key_path = paths['key_path']
+        key_path = path_dict['key_path']
     except KeyError:
         print('---key_path does not exist in ./docs/paths.txt---')
         exit()
@@ -58,7 +58,7 @@ def change_database_dir(path_file, path_dict, new_dir):
     new_path = new_dir + 'pmdb.sqlite'
 
     try:
-        database_path = paths['database_path']
+        database_path = path_dict['database_path']
     except KeyError:
         print('---database_path does not exist in ./docs/paths.txt---')
         exit()
@@ -76,7 +76,7 @@ def change_database_dir(path_file, path_dict, new_dir):
         f.write(filedata)
 
 
-if __name__ == '__main__':
+def main():
 
     path_file = './docs/paths.txt'
 
@@ -84,10 +84,19 @@ if __name__ == '__main__':
         paths = get_paths(path_file)
     else:
         raise(EnvironmentError)
+    
+    if not os.path.exists('./data/'):
+        os.makedirs('./data/')
 
     for arg in sys.argv:
 
-        if arg == '--key_dir':
+        if arg == 'cli':
+            pm = password_manager.PasswordManager(paths)
+            cli = interface.Interface(pm)
+
+            cli.get_user()
+
+        elif arg == '--key_dir':
             print('Enter new key directory')
             new_key_dir = input()
 
@@ -110,11 +119,8 @@ if __name__ == '__main__':
             else:
                 print('---specified path does not exist---')
                 exit()
+
+
+if __name__ == '__main__':
     
-    if not os.path.exists('./data/'):
-        os.makedirs('./data/')
-
-    pm = password_manager.PasswordManager(paths)
-    cli = interface.Interface(pm)
-
-    cli.get_user()
+    main()
