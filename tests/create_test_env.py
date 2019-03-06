@@ -2,7 +2,6 @@ import os
 import sys
 import main
 from main import main
-# sys.path.append(sys.path[0][:-5])
 
 
 def init_env():
