@@ -1,8 +1,7 @@
 import sys
 import os
 import shutil
-from passwordmanager import password_manager
-from passwordmanager import interface
+from src import password_manager, interface
 
 
 def get_paths(path_file):

@@ -1,5 +1,5 @@
 import unittest
-from passwordmanager import password_manager, models
+from src import password_manager, models
 from tests import create_test_env, destroy_test_env
 import main
 
