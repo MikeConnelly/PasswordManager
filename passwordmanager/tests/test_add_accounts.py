@@ -1,7 +1,7 @@
 import unittest
-from src import password_manager, models
-from tests import create_test_env, destroy_test_env
-import main
+from passwordmanager import app
+from passwordmanager.src import password_manager, models
+from passwordmanager.tests import create_test_env, destroy_test_env
 
 
 class TestAddAccounts(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestAddAccounts(unittest.TestCase):
 
     def test(self):
         print('testing')
-        paths = main.get_paths('./tests/docs/paths.txt')
+        paths = app.get_paths('./tests/docs/paths.txt')
         pm = password_manager.PasswordManager(paths)
 
     def tearDown(self):

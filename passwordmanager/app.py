@@ -1,7 +1,8 @@
 import sys
 import os
 import shutil
-from src import password_manager, interface
+from passwordmanager.src import password_manager, interface
+from passwordmanager.gui import gui
 
 
 def get_paths(path_file):
@@ -75,9 +76,9 @@ def change_database_dir(path_file, path_dict, new_dir):
         f.write(filedata)
 
 
-def main():
+def main(args):
 
-    path_file = './docs/paths.txt'
+    path_file = './passwordmanager/docs/paths.txt'
 
     if os.path.isfile(path_file):
         paths = get_paths(path_file)
@@ -87,39 +88,37 @@ def main():
     if not os.path.exists('./data/'):
         os.makedirs('./data/')
 
-    for arg in sys.argv:
+    # use arg parser
+    arg = args[1]
 
-        if arg == 'cli':
-            pm = password_manager.PasswordManager(paths)
-            cli = interface.Interface(pm)
-
-            cli.get_user()
-
-        elif arg == '--key_dir':
-            print('Enter new key directory')
-            new_key_dir = input()
-
-            if os.path.exists(new_key_dir):
-                change_key_dir(path_file, paths, new_key_dir)
-                paths = get_paths(path_file)
-                print('---key path updated---')
-            else:
-                print('---specified path does not exist---')
-                exit()
-
-        elif arg == '--database_dir':
-            print('Enter new database directory')
-            new_database_dir = input()
-
-            if os.path.exists(new_database_dir):
-                change_database_dir(path_file, paths, new_database_dir)
-                paths = get_paths(path_file)
-                print('---database path updated---')
-            else:
-                print('---specified path does not exist---')
-                exit()
-
-
-if __name__ == '__main__':
+    if arg == 'cli':
+        pm = password_manager.PasswordManager(paths)
+        interface.run(pm)
     
-    main()
+    elif arg == 'gui':
+        pm = password_manager.PasswordManager(paths)
+        gui.run(args, pm)
+
+    elif arg == '--key_dir':
+        print('Enter new key directory')
+        new_key_dir = input()
+
+        if os.path.exists(new_key_dir):
+            change_key_dir(path_file, paths, new_key_dir)
+            paths = get_paths(path_file)
+            print('---key path updated---')
+        else:
+            print('---specified path does not exist---')
+            exit()
+
+    elif arg == '--database_dir':
+        print('Enter new database directory')
+        new_database_dir = input()
+
+        if os.path.exists(new_database_dir):
+            change_database_dir(path_file, paths, new_database_dir)
+            paths = get_paths(path_file)
+            print('---database path updated---')
+        else:
+            print('---specified path does not exist---')
+            exit()

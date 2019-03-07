@@ -1,11 +1,14 @@
 from PyQt5 import QtWidgets
-from src import password_manager, models
-import main
+import sys
+from passwordmanager import app
+from passwordmanager.src import password_manager, models
 
 
 class Login(QtWidgets.QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, pm, parent=None):
         super(Login, self).__init__(parent)
+        self.pm = pm
+
         self.text_name = QtWidgets.QLineEdit(self)
         self.text_pass = QtWidgets.QLineEdit(self)
         self.button_login = QtWidgets.QPushButton('login', self)
@@ -18,12 +21,9 @@ class Login(QtWidgets.QDialog):
 
     def handle_login(self):
         
-        path_file = './docs/paths.txt'
-        paths = main.get_paths(path_file)
-        pm = password_manager.PasswordManager(paths)
-        user = pm.session.query(models.User).filter(models.User.username == self.text_name).one()
+        user = self.pm.session.query(models.User).filter(models.User.username == self.text_name.text()).one()
         if user:
-            if user.master_password == pm.crypto.encrypt(self.text_pass):
+            if self.pm.crypto.decrypt(user.master_password) == self.text_pass.text():
                 self.accept()
         if not self.Accepted:
             QtWidgets.QMessageBox.warning(self, 'Error', 'incorrect user or password')
@@ -34,11 +34,10 @@ class Window(QtWidgets.QMainWindow):
         super(Window, self).__init__(parent)
 
 
-if __name__ == '__main__':
+def run(args, pm):
 
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    login = Login()
+    app = QtWidgets.QApplication(args)
+    login = Login(pm)
 
     if login.exec_() == QtWidgets.QDialog.Accepted:
         window = Window()

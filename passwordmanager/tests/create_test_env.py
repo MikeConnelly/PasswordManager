@@ -1,7 +1,5 @@
 import os
 import sys
-import main
-from main import main
 
 
 def init_env():

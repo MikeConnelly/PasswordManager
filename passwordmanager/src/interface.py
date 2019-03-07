@@ -162,3 +162,8 @@ class Interface:
 
         self.pm.change_entry(selection, col_selection, new_field)
         print('---account successfully updated---')
+
+
+def run(pm):
+    cli = Interface(pm)
+    cli.get_user()
