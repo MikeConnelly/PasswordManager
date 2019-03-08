@@ -1,3 +1,4 @@
+from passwordmanager.src.password_manager import UserError
 
 
 class Interface:
@@ -45,30 +46,38 @@ class Interface:
     
     def create_user_cmd(self):
 
-        print('Enter username: ')
-        username = input()
-        masterpass = ''
+        while not self.pm.user:
+            print('Enter username: ')
+            username = input()
+            masterpass = ''
 
-        while not masterpass:
+            while not masterpass:
 
-            print('Create password: ')
-            masterpass = input()
+                print('Create password: ')
+                masterpass = input()
 
-            print('Confirm password: ')
-            if input() != masterpass:
-                masterpass = ''
-
-        self.pm.create_user(username, masterpass)
+                print('Confirm password: ')
+                if input() != masterpass:
+                    print('---Password do not match---')
+                    masterpass = ''
+            try:
+                self.pm.create_user(username, masterpass)
+            except UserError as err:
+                print(str(err))
 
     def login_cmd(self):
 
-        print('Enter username: ')
-        username = input()
-        print('Enter password: ')
-        password = input()
+        while not self.pm.user:
+            print('Enter username: ')
+            username = input()
+            print('Enter password: ')
+            password = input()
 
-        self.pm.login(username, password)
-    
+            try:
+                self.pm.login(username, password)
+            except UserError as err:
+                print(str(err))
+
     def retrieve_table_cmd(self):
 
         table = self.pm.retrieve_table()

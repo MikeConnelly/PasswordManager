@@ -10,6 +10,7 @@ from .models import Base, Account, User
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
 
 class PasswordManager:
@@ -37,10 +38,10 @@ class PasswordManager:
         '''
 
         # check if user already exists
-        list = self.session.query(User).filter(User.username == username).all()
+        user_list = self.session.query(User).filter(User.username == username).all()
 
-        if list != []:
-            raise UserError
+        if user_list != []:
+            raise UserError('user already exists')
         else:
             hashed_masterpass = self.crypto.encrypt(masterpass)
 
@@ -56,30 +57,27 @@ class PasswordManager:
         Sets user for current session
         '''
 
-        user = self.session.query(User).filter(User.username == username).one()
-
         try:
-            hashed_pass = user.master_password
-            masterpass = self.crypto.decrypt(hashed_pass)
+            user = self.session.query(User).filter(User.username == username).one()
+        except NoResultFound:
+            raise UserError('user does not exist')
 
-            if masterpass == password:
-                print('---login successful---')
-                self.user = user
-            else:
-                print('---invalid password---')
-        except IndexError:
-            print('---user does not exist---')
+        hashed_pass = user.master_password
+        masterpass = self.crypto.decrypt(hashed_pass)
+
+        if masterpass == password:
+            self.user = user
+            return True
+        else:
+            raise UserError('incorrect password')
 
     def create_user(self, username, masterpass):
         '''
         Adds new user to database and logs them in
         '''
 
-        try:
-            self.add_user_to_master(username, masterpass)
-            self.login(username, masterpass)
-        except UserError:
-            print('---user already exists---')
+        self.add_user_to_master(username, masterpass)
+        self.login(username, masterpass)
 
     def retrieve_table(self):
         '''
