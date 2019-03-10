@@ -1,12 +1,11 @@
 import sys
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit, 
-                             QPushButton, QVBoxLayout, QMessageBox)
-from passwordmanager import app
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
+                             QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
+                             QToolBar)
 from passwordmanager.src.password_manager import UserError
 
 
-class Login(QtWidgets.QDialog):
+class Login(QDialog):
 
     def __init__(self, pm, parent=None):
         super(Login, self).__init__(parent)
@@ -23,7 +22,7 @@ class Login(QtWidgets.QDialog):
         layout.addWidget(self.login_button)
 
     def handle_login(self):
-        
+
         try:
             self.pm.login(self.name_field.text(), self.pass_field.text())
             self.accept()
@@ -31,33 +30,55 @@ class Login(QtWidgets.QDialog):
             QMessageBox.warning(self, 'Error', str(err))
 
 
-class Window(QtWidgets.QMainWindow):
+class Window(QMainWindow):
 
     def __init__(self, pm, parent=None):
         super(Window, self).__init__(parent)
-        self.setGeometry(750, 400, 500, 200)
-
+        self.setGeometry(300, 200, 1400, 600)
+        self.setWindowTitle('Password Manager')
         self.pm = pm
-        self.create_table()
 
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.table_widget)
+        toolbar = QToolBar('main toolbar')
+        self.addToolBar(toolbar)
+
+        welcome_label = QLabel('WELCOME ' + self.pm.user.username.upper())
+        table_widget = self.create_table()
+
+        layout = QVBoxLayout()
+        layout.addWidget(welcome_label)
+        layout.addWidget(table_widget)
+
+        main_widget = QWidget()
+        main_widget.setLayout(layout)
+        self.setCentralWidget(main_widget)
 
     def create_table(self):
         account_table = self.pm.retrieve_table()
 
-        self.table_widget = QTableWidget(self)
-        self.table_widget.setGeometry(0, 0, 500, 200)
-        self.table_widget.setRowCount(len(account_table))
-        self.table_widget.setColumnCount(4)
+        table_widget = QTableWidget()
+        table_widget.setGeometry(50, 400, 500, 200)
+        table_widget.setRowCount(len(account_table))
+        table_widget.setColumnCount(4)
 
         index = 0
         for account in account_table:
-            self.table_widget.setItem(index, 0, QTableWidgetItem(account['name']))
-            self.table_widget.setItem(index, 1, QTableWidgetItem(account['email']))
-            self.table_widget.setItem(index, 2, QTableWidgetItem(account['password']))
-            self.table_widget.setItem(index, 3, QTableWidgetItem(account['url']))
+            modify_button = QPushButton('modify')
+            remove_button = QPushButton('remove')
+            layout = QVBoxLayout()
+            layout.addWidget(modify_button)
+            layout.addWidget(remove_button)
+            first_col_widget = QWidget()
+            first_col_widget.setLayout(layout)
+            table_widget.setCellWidget(index, 0, first_col_widget)
+
+            table_widget.setItem(index, 1, QTableWidgetItem(account['name']))
+            table_widget.setItem(index, 2, QTableWidgetItem(account['email']))
+            table_widget.setItem(index, 3, QTableWidgetItem(account['password']))
+            table_widget.setItem(index, 4, QTableWidgetItem(account['url']))
             index += 1
+
+
+        return table_widget
 
 
 def run(args, pm):
@@ -65,7 +86,7 @@ def run(args, pm):
     app = QApplication(args)
     login = Login(pm)
 
-    if login.exec_() == QtWidgets.QDialog.Accepted:
+    if login.exec_() == QDialog.Accepted:
         window = Window(pm)
         window.show()
         sys.exit(app.exec_())

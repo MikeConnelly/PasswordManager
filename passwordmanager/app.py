@@ -89,7 +89,9 @@ def main(args):
         os.makedirs('./data/')
 
     # use arg parser
-    arg = args[1]
+    arg = ''
+    if (len(args) > 1):
+        arg = args[1]
 
     if arg == 'cli':
         pm = password_manager.PasswordManager(paths)
