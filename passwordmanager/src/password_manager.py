@@ -5,13 +5,12 @@ to-do:
  - change key and db dir to single line args
  - change how many args can be passed into main / how they're handled
 '''
-from .crypto import Crypto
-from .models import Base, Account, User
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-
+from .crypto import Crypto
+from .models import Base, Account, User
 
 class PasswordManager:
 
@@ -134,13 +133,14 @@ class PasswordManager:
         
         self.session.query(Account).filter(Account.id == account['id']).update({col: new_field})
         self.session.commit()
+    
+    def close_session(self):
+        '''closes database session'''
+        self.session.close()
 
     def logout(self):
-        '''
-        Closes database session and ends the exits the program
-        '''
-
-        self.session.close()
+        '''Closes database session and ends the exits the program'''
+        self.close_session()
         exit(0)
 
 

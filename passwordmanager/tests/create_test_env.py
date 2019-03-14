@@ -5,16 +5,16 @@ import sys
 def init_env():
 
     try:
-        os.makedirs('./tests/docs/')
+        os.makedirs('./passwordmanager/tests/docs/')
     except OSError:
         return False
 
-    with open('./tests/docs/paths.txt', 'w') as f:
-        f.write('database_path=/tests/data/pmdb.sqlite\n')
-        f.write('key_path=./tests/data/key.bin\n')
+    with open('./passwordmanager/tests/docs/paths.txt', 'w') as f:
+        f.write('database_path=/passwordmanager/tests/data/pmdb.sqlite\n')
+        f.write('key_path=./passwordmanager/tests/data/key.bin\n')
     
     try:
-        os.makedirs('./tests/data/')
+        os.makedirs('./passwordmanager/tests/data/')
     except OSError:
         return False
     

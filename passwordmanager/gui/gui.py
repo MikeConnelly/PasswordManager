@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidg
                              QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
                              QToolBar)
 from passwordmanager.src.password_manager import UserError
+from passwordmanager.gui.mainwindow import *
 
 
 class Login(QDialog):
@@ -29,7 +30,7 @@ class Login(QDialog):
         except UserError as err:
             QMessageBox.warning(self, 'Error', str(err))
 
-
+'''
 class Window(QMainWindow):
 
     def __init__(self, pm, parent=None):
@@ -57,8 +58,10 @@ class Window(QMainWindow):
 
         table_widget = QTableWidget()
         table_widget.setGeometry(50, 400, 500, 200)
-        table_widget.setRowCount(len(account_table))
-        table_widget.setColumnCount(4)
+        table_widget.setRowCount(len(account_table)+1)
+        table_widget.setColumnCount(5)
+        table_widget.columnWidth(100)
+        table_widget.rowHeight(100)
 
         index = 0
         for account in account_table:
@@ -77,9 +80,48 @@ class Window(QMainWindow):
             table_widget.setItem(index, 4, QTableWidgetItem(account['url']))
             index += 1
 
+        add_account_button = QPushButton('+')
+        table_widget.setCellWidget(index, 0, add_account_button)
 
         return table_widget
+'''
 
+class Window(QMainWindow):
+
+    def __init__(self, pm, parent=None):
+        super(Window, self).__init__(parent)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.pm = pm
+        self.setup_table()
+    
+    def setup_table(self):
+        account_table = self.pm.retrieve_table()
+
+        self.ui.tableWidget.setRowCount(len(account_table)+1)
+
+        index = 0
+        for account in account_table:
+            modify_button = QPushButton('modify')
+            remove_button = QPushButton('remove')
+            layout = QVBoxLayout()
+            layout.addWidget(modify_button)
+            layout.addWidget(remove_button)
+            first_col_widget = QWidget()
+            first_col_widget.setGeometry(QtCore.QRect(0, 0, 75, 50))
+            first_col_widget.setLayout(layout)
+            self.ui.tableWidget.setCellWidget(index, 0, first_col_widget)
+
+            self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(account['name']))
+            self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(account['email']))
+            self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(account['password']))
+            self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(account['url']))
+            index += 1
+
+        add_account_button = QPushButton('+')
+        self.ui.tableWidget.setCellWidget(index, 0, add_account_button)
+
+        return self.ui.tableWidget
 
 def run(args, pm):
 
