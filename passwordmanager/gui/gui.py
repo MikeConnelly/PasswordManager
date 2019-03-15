@@ -108,10 +108,10 @@ class Window(QMainWindow):
             layout.addWidget(modify_button)
             layout.addWidget(remove_button)
             first_col_widget = QWidget()
-            first_col_widget.setGeometry(QtCore.QRect(0, 0, 75, 50))
             first_col_widget.setLayout(layout)
-            self.ui.tableWidget.setCellWidget(index, 0, first_col_widget)
 
+
+            self.ui.tableWidget.setCellWidget(index, 0, first_col_widget)
             self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(account['name']))
             self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(account['email']))
             self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(account['password']))
