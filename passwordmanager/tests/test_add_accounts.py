@@ -5,6 +5,9 @@ from passwordmanager.tests import create_test_env, destroy_test_env
 
 
 class TestAddAccounts(unittest.TestCase):
+    '''
+    class docstring
+    '''
     def setUp(self):
         print('setup TestAddAccounts')
         create_test_env.init_env()
@@ -17,11 +20,5 @@ class TestAddAccounts(unittest.TestCase):
 
     def tearDown(self):
         print('teardown TestAddAccounts')
-        self.pm.close_session()
+        self.pm.logout()
         destroy_test_env.destroy_env()
-'''
-add a logout_cmd in interface that exits program
-remove exit(0) from pm.logout
-call logout over close_session()
-C:\Users\Mike\Envs\pmenv\Scripts\pyuic5.exe
-'''
