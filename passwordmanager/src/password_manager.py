@@ -94,7 +94,7 @@ class PasswordManager:
             .filter(Account.name == account_name)\
             .all()
         if row != []:
-            raise AccountError('account with name ' + account_name + ' already exists')
+            raise AccountError(f"account with name {account_name} already exists")
 
         hashed_pass = self.crypto.encrypt(account_password)
         hashed_email = self.crypto.encrypt(account_email)

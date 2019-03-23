@@ -6,6 +6,7 @@ Base = declarative_base()
 
 
 class Account(Base):
+    '''database model for account table'''
     __tablename__ = 'account_table'
 
     id = Column('id', Integer, primary_key=True)
@@ -17,6 +18,7 @@ class Account(Base):
 
 
 class User(Base):
+    '''database model for user table'''
     __tablename__ = 'user_table'
 
     id = Column('id', Integer, primary_key=True)

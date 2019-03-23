@@ -11,7 +11,7 @@ def get_paths(path_file):
     """
 
     with open(path_file, 'r') as f:
-        paths=f.read().split('\n')
+        paths = f.read().split('\n')
 
     path_dict = {}
     for line in paths:
@@ -24,7 +24,7 @@ def get_paths(path_file):
 
 def change_key_dir(path_file, path_dict, new_dir):
     """
-    Change the directory where the key is stored.
+    Change the directory where the key is stored.\n
     If a key already exists move it to the new directory.
     """
 
@@ -51,7 +51,7 @@ def change_key_dir(path_file, path_dict, new_dir):
 
 def change_database_dir(path_file, path_dict, new_dir):
     """
-    Change the directory where the database is stored.
+    Change the directory where the database is stored.\n
     If a database already exists move it to the new directory.
     """
 
@@ -85,8 +85,8 @@ def main(args):
     else:
         raise(EnvironmentError)
     
-    if not os.path.exists('./data/'):
-        os.makedirs('./data/')
+    if not os.path.exists('./passwordmanager/data/'):
+        os.makedirs('./passwordmanager/data/')
 
     # use arg parser
     arg = ''

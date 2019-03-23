@@ -19,7 +19,7 @@ class Interface:
             elif command == 'login':
                 self.login_cmd()
             else:
-                print('invalid command')
+                print('---invalid command---')
 
         self.get_cmd()
 
@@ -85,17 +85,12 @@ class Interface:
 
         print('---table---')
         for account in table:
-            print(
-                'Service: ' + account['name']
-                + ', Email: '+ account['email']
-                + ', Password: ' + account['password']
-                + ', URL: ' + account['url']
-            )
+            print(f"Service: {account['name']}, Email: {account['email']}, Password: {account['password']}, URL: {account['url']}")
         print('-----------')
 
     def add_user_entry_cmd(self):
         '''CLI to add an account for the current user'''
-        print('---add an entry or "exit"---')
+        print('---add an entry or type "exit"---')
 
         try:
             print('Account: ')
@@ -134,7 +129,7 @@ class Interface:
             index += 1
 
         while not selection:
-            print('Enter the index of the account you want to ' + mode + ' or "exit"')
+            print(f"Enter the index of the account you want to {mode} or \"exit\"")
             try:
                 selection = account_map[int(get_input_or_exit())]
             except (KeyError, ValueError):
@@ -180,7 +175,7 @@ class Interface:
 
         col_selection = None
         while not col_selection:
-            print('Enter the index of the field you want to change or "exit"')
+            print("Enter the index of the field you want to change or \"exit\"")
             try:
                 i = int(get_input_or_exit())
                 col_selection = cols[i]
