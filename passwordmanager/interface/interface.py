@@ -7,7 +7,7 @@ class Interface:
     '''
     def __init__(self, pm):
         self.pm = pm
-    
+
     def get_user(self):
         '''create new user or continue to login'''
         while self.pm.user is None:
@@ -85,7 +85,7 @@ class Interface:
 
         print('---table---')
         for account in table:
-            print(f"Service: {account['name']}, Email: {account['email']}, Password: {account['password']}, URL: {account['url']}")
+            print(f"Account: {account['name']}, Email: {account['email']}, Password: {account['password']}, URL: {account['url']}")
         print('-----------')
 
     def add_user_entry_cmd(self):

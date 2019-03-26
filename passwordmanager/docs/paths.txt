@@ -1,2 +1,0 @@
-database_path=/passwordmanager/data/pmdb.sqlite
-key_path=./passwordmanager/data/key.bin

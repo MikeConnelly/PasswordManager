@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidg
                              QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
                              QToolBar)
 from passwordmanager.src.password_manager import UserError
-from passwordmanager.gui.mainwindow import *
+from passwordmanager.interface.mainwindow import *
 
 
 class Login(QDialog):

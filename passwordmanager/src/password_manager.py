@@ -1,10 +1,3 @@
-'''
-to-do:
- - create a file that holds the directories of key and db for different users
- - use absolute file paths for simplicity
- - change key and db dir to single line args
- - change how many args can be passed into main / how they're handled
-'''
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -59,11 +52,10 @@ class PasswordManager:
         hashed_pass = user.master_password
         masterpass = self.crypto.decrypt(hashed_pass)
 
-        if masterpass == password:
-            self.user = user
-            return True
-        else:
+        if masterpass != password:
             raise UserError('incorrect password')
+        self.user = user
+        return True
 
     def create_user(self, username, masterpass):
         '''Adds new user to database and logs them in'''
