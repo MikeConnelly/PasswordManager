@@ -27,6 +27,7 @@ class PasswordManager:
 
     def add_user_to_master(self, username, masterpass):
         '''Adds new user to user_table in database'''
+
         # check if user already exists
         user_list = self.session.query(User).filter(User.username == username).all()
 
