@@ -62,7 +62,7 @@ class Interface:
                     masterpass = ''
 
             try:
-                self.pm.create_user(username, masterpass)
+                self.pm.create_user_and_login(username, masterpass)
             except UserError as err:
                 print(str(err))
 

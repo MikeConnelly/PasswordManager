@@ -25,7 +25,7 @@ class PasswordManager:
         Session = sessionmaker(bind=engine)
         self.session = Session()
 
-    def add_user_to_master(self, username, masterpass):
+    def create_user(self, username, masterpass):
         '''Adds new user to user_table in database'''
 
         # check if user already exists
@@ -58,9 +58,9 @@ class PasswordManager:
         self.user = user
         return True
 
-    def create_user(self, username, masterpass):
+    def create_user_and_login(self, username, masterpass):
         '''Adds new user to database and logs them in'''
-        self.add_user_to_master(username, masterpass)
+        self.create_user(username, masterpass)
         self.login(username, masterpass)
 
     # call this function from __init__ and use a class variable to call from interfaces
@@ -112,7 +112,7 @@ class PasswordManager:
         '''Changes a field in an account'''
         if col == 'email' or col == 'password':
             new_field = self.crypto.encrypt(new_field)
-        
+
         self.session.query(Account).filter(Account.id == account['id']).update({col: new_field})
         self.session.commit()
 

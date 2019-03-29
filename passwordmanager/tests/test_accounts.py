@@ -13,8 +13,8 @@ class TestAddAccounts(unittest.TestCase):
         create_test_env.init_env()
         paths = app.get_paths('./passwordmanager/tests/data/paths.json')
         self.pm = PasswordManager(paths)
-        self.pm.add_user_to_master('test_user_1', 'test_pass_1')
-        self.pm.add_user_to_master('test_user_2', 'test_pass_2')
+        self.pm.create_user('test_user_1', 'test_pass_1')
+        self.pm.create_user('test_user_2', 'test_pass_2')
 
     def test_add_account(self):
         self.pm.login('test_user_1', 'test_pass_1')
