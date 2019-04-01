@@ -6,9 +6,9 @@ from passwordmanager.tests import create_test_env, destroy_test_env
 
 
 class TestAddAccounts(unittest.TestCase):
-    '''
+    """
     class docstring
-    '''
+    """
     def setUp(self):
         create_test_env.init_env()
         paths = app.get_paths('./passwordmanager/tests/data/paths.json')
