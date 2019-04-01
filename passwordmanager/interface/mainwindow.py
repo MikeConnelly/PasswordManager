@@ -63,5 +63,3 @@ class Ui_MainWindow(object):
         item = self.tableWidget.horizontalHeaderItem(4)
         item.setText(_translate("MainWindow", "URL"))
         self.toolButton.setText(_translate("MainWindow", "..."))
-
-

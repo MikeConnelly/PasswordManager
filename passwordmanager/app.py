@@ -61,7 +61,7 @@ def change_database_dir(path_file, path_dict, new_dir):
 
 
 def main(args):
-    '''main docstirng'''
+    """main docstirng"""
     if not os.path.exists('./passwordmanager/data/'):
         os.makedirs('./passwordmanager/data/')
 

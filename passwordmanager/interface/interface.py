@@ -2,14 +2,14 @@ from passwordmanager.src.password_manager import UserError, AccountError
 
 
 class Interface:
-    '''
+    """
     command line interface for password manager
-    '''
+    """
     def __init__(self, pm):
         self.pm = pm
 
     def get_user(self):
-        '''create new user or continue to login'''
+        """create new user or continue to login"""
         while self.pm.user is None:
             print('enter login or newuser')
             command = input()
@@ -24,7 +24,7 @@ class Interface:
         self.get_cmd()
 
     def get_cmd(self):
-        '''main application loop to execute user commands'''
+        """main application loop to execute user commands"""
         while True:
             print('1: retrieve table')
             print('2: add an entry')
@@ -46,7 +46,7 @@ class Interface:
                 print('---invalid input---')
 
     def create_user_cmd(self):
-        '''CLI to create new user'''
+        """CLI to create new user"""
         while self.pm.user is None:
             print('Enter username: ')
             username = input()
@@ -67,7 +67,7 @@ class Interface:
                 print(str(err))
 
     def login_cmd(self):
-        '''CLI to login'''
+        """CLI to login"""
         while not self.pm.user:
             print('Enter username: ')
             username = input()
@@ -80,7 +80,7 @@ class Interface:
                 print(str(err))
 
     def retrieve_table_cmd(self):
-        '''prints the current user's table of accounts'''
+        """prints the current user's table of accounts"""
         table = self.pm.retrieve_table()
 
         print('---table---')
@@ -89,7 +89,7 @@ class Interface:
         print('-----------')
 
     def add_user_entry_cmd(self):
-        '''CLI to add an account for the current user'''
+        """CLI to add an account for the current user"""
         print('---add an entry or type "exit"---')
 
         try:
@@ -114,10 +114,10 @@ class Interface:
             print(str(err))
 
     def select_user_account_cmd(self, mode):
-        '''
+        """
         print user accounts and return the one selected\n
         raises ExitError
-        '''
+        """
         table = self.pm.retrieve_table()
 
         selection = None
@@ -138,7 +138,7 @@ class Interface:
         return selection
 
     def remove_entry_cmd(self):
-        '''user selects an account to remove'''
+        """user selects an account to remove"""
         print('---remove an entry---')
 
         try:
@@ -150,7 +150,7 @@ class Interface:
         print(selection['name'] + ' successfully removed')
 
     def change_entry_cmd(self):
-        '''user selects and account and field to update'''
+        """user selects and account and field to update"""
         print('---change an entry---')
         try:
             selection = self.select_user_account_cmd('change')
@@ -191,19 +191,19 @@ class Interface:
         print('---account successfully updated---')
 
     def logout_cmd(self):
-        '''logout and exit'''
+        """logout and exit"""
         self.pm.logout()
         exit(0)
 
 
 def run(pm):
-    '''starts command line interface'''
+    """starts command line interface"""
     cli = Interface(pm)
     cli.get_user()
 
 
 def get_input_or_exit():
-    '''get user input or raise ExitError'''
+    """get user input or raise ExitError"""
     value = input()
     if value == 'exit':
         raise ExitError
@@ -211,4 +211,4 @@ def get_input_or_exit():
 
 
 class ExitError(Exception):
-    '''exception raised when exiting a function through get_input_or_exit'''
+    """exception raised when exiting a function through get_input_or_exit"""
