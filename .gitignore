@@ -1,6 +1,7 @@
 .vscode/
 .idea/
 data/
+index/
 __pycache__/
 *.pyc
 notes.txt

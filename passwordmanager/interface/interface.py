@@ -5,6 +5,7 @@ class Interface:
     """
     command line interface for password manager
     """
+    
     def __init__(self, pm):
         self.pm = pm
 

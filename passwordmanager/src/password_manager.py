@@ -9,6 +9,7 @@ class PasswordManager:
     """
     class docstring
     """
+
     def __init__(self, paths):
         self.user = None
         self.sqlite_file = paths['database_path']
@@ -102,7 +103,10 @@ class PasswordManager:
 
     def remove_entry(self, account):
         """Removes an account from the current user's table"""
-        row = self.session.query(Account).filter(Account.id == account['id']).one()
+        row = self.session.query(Account)\
+                .filter(Account.user_id == self.user.id)\
+                .filter(Account.name == account['name'])\
+                .one()
         self.session.delete(row)
         self.session.commit()
 
@@ -117,7 +121,10 @@ class PasswordManager:
         elif col == 'email' or col == 'password':
             new_field = self.crypto.encrypt(new_field)
 
-        self.session.query(Account).filter(Account.id == account['id']).update({col: new_field})
+        self.session.query(Account)\
+                .filter(Account.user_id == self.user.id)\
+                .filter(Account.name == account['name'])\
+                .update({col: new_field})
         self.session.commit()
 
     def logout(self):

@@ -1,4 +1,8 @@
 import sys
+import os
+from whoosh.fields import Schema, TEXT, STORED
+from whoosh.index import create_in, open_dir
+from whoosh.qparser import QueryParser, MultifieldParser, FuzzyTermPlugin
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
                              QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
                              QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout)
@@ -14,8 +18,10 @@ class CreateAccount(QDialog):
         self.name_field = QLineEdit(self)
         self.pass_label = QLabel('password name:', self)
         self.pass_field = QLineEdit(self)
+        self.pass_field.setEchoMode(QLineEdit.Password)
         self.confirm_pass_label = QLabel('confirm password:', self)
         self.confirm_pass_field = QLineEdit(self)
+        self.confirm_pass_field.setEchoMode(QLineEdit.Password)
         self.cancel_button = QPushButton('cancel', self)
         self.cancel_button.clicked.connect(self.handle_cancel)
         self.register_button = QPushButton('create account', self)
@@ -55,6 +61,7 @@ class Login(QDialog):
         self.name_field = QLineEdit(self)
         self.pass_label = QLabel('password name:', self)
         self.pass_field = QLineEdit(self)
+        self.pass_field.setEchoMode(QLineEdit.Password)
         self.login_button = QPushButton('login', self)
         self.login_button.clicked.connect(self.handle_login)
         self.cancel_button = QPushButton('cancel', self)
@@ -194,57 +201,89 @@ class ModifyDialog(QDialog):
 
 
 class Window(QMainWindow):
+    """class docstring"""
+
     def __init__(self, pm, parent=None):
         super(Window, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.pm = pm
         self.setup_table()
+        self.setup_tools()
 
-    def setup_table(self):
-        account_table = self.pm.retrieve_table()
+    def setup_table(self, results=[]):
+        if results == []:
+            account_table = self.pm.retrieve_table()
+        else:
+            account_table = results
         self.ui.tableWidget.clearContents()
-        self.ui.tableWidget.setRowCount(len(account_table)+1)
+        self.ui.tableWidget.setRowCount(len(account_table))
         index = 0
         for account in account_table:
-            group_box = QGroupBox()
-            group_box.setGeometry(QtCore.QRect(100, 330, 100, 50))
-            remove_button = QPushButton(group_box)
-            remove_button.setGeometry(QtCore.QRect(0, 25, 100, 25))
-            remove_button.setText('REMOVE')
-            remove_button.clicked.connect(lambda: self.handle_remove(account))
-            modify_button = QPushButton(group_box)
-            modify_button.setGeometry(QtCore.QRect(0, 0, 100, 25))
-            modify_button.setText('MODIFY')
-            modify_button.clicked.connect(lambda: self.handle_modify(account))
-
-            self.ui.tableWidget.setCellWidget(index, 0, group_box)
-            self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(account['name']))
-            self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(account['email']))
-            self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(account['password']))
-            self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(account['url']))
+            print(account)
+            self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(account['name']))
+            self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(account['email']))
+            self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(account['password']))
+            self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(account['url']))
             index += 1
 
-        add_account_button = QPushButton('ADD')
-        add_account_button.clicked.connect(self.add_dialog)
-        self.ui.tableWidget.setCellWidget(index, 0, add_account_button)
-        return self.ui.tableWidget
+    def setup_tools(self):
+        self.ui.remove_account_button.clicked.connect(lambda: self.handle_remove(self.ui.tableWidget.selectedItems()))
+        self.ui.modify_account_button.clicked.connect(lambda: self.handle_modify(self.ui.tableWidget.selectedItems()))
+        self.ui.add_account_button.clicked.connect(self.add_dialog)
+
+        account_table = self.pm.retrieve_table()
+        schema = Schema(name=TEXT(stored=True), email=TEXT(stored=True), password=STORED, url=STORED)
+        if not os.path.exists('index'):
+            os.mkdir('index')
+        ix = create_in('index', schema)
+        writer = ix.writer()
+        for account in account_table:
+            writer.add_document(name=account['name'], email=account['email'], password=account['password'], url=account['url'])
+        writer.commit()
+        self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
 
     def add_dialog(self):
         add_dialog = AddRowDialog(self.pm)
         if add_dialog.exec_() == QDialog.Accepted:
             self.setup_table()
 
-    def handle_modify(self, account):
-        modify_dialog = ModifyDialog(self.pm, account)
-        if modify_dialog.exec_() == QDialog.Accepted:
-            self.setup_table()
+    def handle_modify(self, selected):
+        if selected:
+            account = {
+                'name': selected[0].text(),
+                'email': selected[1].text(),
+                'password': selected[2].text(),
+                'url': selected[3].text()
+            }
+            modify_dialog = ModifyDialog(self.pm, account)
+            if modify_dialog.exec_() == QDialog.Accepted:
+                self.setup_table()
 
-    def handle_remove(self, account):
-        msg = f"Are you sure you want to remove {account['name']}"
-        choice = QMessageBox.question(self, 'Remove?', msg, QMessageBox.Yes, QMessageBox.No)
-        if choice == QMessageBox.Yes:
-            self.pm.remove_entry(account)
+    def handle_remove(self, selected):
+        if selected:
+            account = {
+                'name': selected[0].text(),
+                'email': selected[1].text(),
+                'password': selected[2].text(),
+                'url': selected[3].text()
+            }
+            msg = f"Are you sure you want to remove {account['name']}"
+            choice = QMessageBox.question(self, 'Remove?', msg, QMessageBox.Yes, QMessageBox.No)
+            if choice == QMessageBox.Yes:
+                self.pm.remove_entry(account)
+                self.setup_table()
+
+    def handle_search(self, query):
+        if query:
+            ix = open_dir('index')
+            with ix.searcher() as searcher:
+                parser = MultifieldParser(['name', 'email'], ix.schema)
+                parser.add_plugin(FuzzyTermPlugin())
+                myquery = parser.parse(query + '~5')
+                results = searcher.search(myquery)
+                self.setup_table(results)
+        else:
             self.setup_table()
 
 
