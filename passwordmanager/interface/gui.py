@@ -2,7 +2,7 @@ import sys
 import os
 from whoosh.fields import Schema, TEXT, STORED
 from whoosh.index import create_in, open_dir
-from whoosh.qparser import QueryParser, MultifieldParser, FuzzyTermPlugin
+from whoosh.qparser import QueryParser, FuzzyTermPlugin
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
                              QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
                              QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout)
@@ -274,11 +274,11 @@ class Window(QMainWindow):
                 self.pm.remove_entry(account)
                 self.setup_table()
 
-    def handle_search(self, query):
+    def handle_search(self, query, field='name'):
         if query:
             ix = open_dir('index')
             with ix.searcher() as searcher:
-                parser = MultifieldParser(['name', 'email'], ix.schema)
+                parser = QueryParser(field, ix.schema)
                 parser.add_plugin(FuzzyTermPlugin())
                 myquery = parser.parse(query + '~5')
                 results = searcher.search(myquery)
