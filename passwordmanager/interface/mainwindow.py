@@ -79,4 +79,3 @@ class Ui_MainWindow(object):
         self.add_account_button.setText(_translate("MainWindow", "A"))
         self.add_column_button.setText(_translate("MainWindow", "C"))
 
-

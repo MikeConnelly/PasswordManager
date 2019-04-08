@@ -1,3 +1,4 @@
+from getpass import getpass
 from passwordmanager.src.password_manager import UserError, AccountError
 
 
@@ -5,7 +6,7 @@ class Interface:
     """
     command line interface for password manager
     """
-    
+
     def __init__(self, pm):
         self.pm = pm
 
@@ -14,14 +15,12 @@ class Interface:
         while self.pm.user is None:
             print('enter login or newuser')
             command = input()
-
             if command == 'newuser':
                 self.create_user_cmd()
             elif command == 'login':
                 self.login_cmd()
             else:
                 print('---invalid command---')
-
         self.get_cmd()
 
     def get_cmd(self):
@@ -31,16 +30,16 @@ class Interface:
             print('2: add an entry')
             print('3: remove an entry')
             print('4: change an entry')
-            print('5: logout')
-
+            print('5: add a field')
+            print('6: logout')
             commands = {
                 '1': self.retrieve_table_cmd,
                 '2': self.add_user_entry_cmd,
                 '3': self.remove_entry_cmd,
                 '4': self.change_entry_cmd,
-                '5': self.logout_cmd
+                '5': self.add_column_cmd,
+                '6': self.logout_cmd
             }
-
             try:
                 commands[input()]()
             except KeyError:
@@ -55,10 +54,9 @@ class Interface:
 
             while not masterpass:
                 print('Create password: ')
-                masterpass = input()
-
+                masterpass = getpass(prompt='')
                 print('Confirm password: ')
-                if input() != masterpass:
+                if getpass(prompt='') != masterpass:
                     print('---Password do not match---')
                     masterpass = ''
 
@@ -73,7 +71,7 @@ class Interface:
             print('Enter username: ')
             username = input()
             print('Enter password: ')
-            password = input()
+            password = getpass(prompt='')
 
             try:
                 self.pm.login(username, password)
@@ -86,41 +84,53 @@ class Interface:
 
         print('---table---')
         for account in table:
-            print(f"Account: {account['name']}, Email: {account['email']}, Password: {account['password']}, URL: {account['url']}")
+            index = 1
+            length = len(account)
+            for field, value in account.items():
+                end = '\n' if index == length else ', '
+                print(f"{field}: {value}", end=end)
+                index += 1
         print('-----------')
 
     def add_user_entry_cmd(self):
         """CLI to add an account for the current user"""
         print('---add an entry or type "exit"---')
+        if self.pm.user.custom_cols:
+            custom_cols = self.pm.user.custom_cols.split(',')
+            expansion = {}
+        else:
+            custom_cols = []
+            expansion = None
 
         try:
             print('Account: ')
             account = get_input_or_exit()
-
             print('Email: ')
             username = get_input_or_exit()
-
             print('Password: ')
-            password = get_input_or_exit()
-
+            password = get_input_or_exit(password=True)
             print('URL (optional): ')
             url = get_input_or_exit()
+            for col in custom_cols:
+                print(f"{col} (optional): ")
+                value = get_input_or_exit()
+                if value:
+                    expansion[col] = value
         except ExitError:
             return
 
         try:
-            self.pm.add_user_entry(account, username, password, url)
+            self.pm.add_user_entry(account, username, password, url, expansion)
             print('---account added---')
         except AccountError as err:
             print(str(err))
 
-    def select_user_account_cmd(self, mode):
+    def select_user_account_cmd(self, mode='remove or change'):
         """
         print user accounts and return the one selected\n
         raises ExitError
         """
         table = self.pm.retrieve_table()
-
         selection = None
         index = 1
         account_map = {}
@@ -151,35 +161,30 @@ class Interface:
         print(selection['name'] + ' successfully removed')
 
     def change_entry_cmd(self):
-        """user selects and account and field to update"""
+        """user selects an account and field to update"""
         print('---change an entry---')
         try:
             selection = self.select_user_account_cmd('change')
         except ExitError:
             return
 
-        fields = {
-            1: selection['name'],
-            2: selection['email'],
-            3: selection['password'],
-            4: selection['url']
-        }
-        cols = {
-            1: 'name',
-            2: 'email',
-            3: 'password',
-            4: 'url'
-        }
-
-        for key, value in fields.items():
-            print(str(key) + '. ' + cols[key] + ': ' + str(value))
+        custom_fields = self.pm.user.custom_cols.split(',') if self.pm.user.custom_cols else []
+        all_fields = ['name', 'password', 'email', 'url']
+        all_fields.extend(custom_fields)
+        index = 1
+        cols = {}
+        for field in all_fields:
+            value = selection[field] if field in selection else ''
+            print(f"{index}. {field}: {value}")
+            cols[str(index)] = field
+            index += 1
 
         col_selection = None
         while not col_selection:
             print("Enter the index of the field you want to change or \"exit\"")
+            is_password = col_selection == 'password'
             try:
-                i = int(get_input_or_exit())
-                col_selection = cols[i]
+                col_selection = cols[get_input_or_exit(password=is_password)]
             except (KeyError, ValueError):
                 print('---invalid input---')
             except ExitError:
@@ -190,6 +195,17 @@ class Interface:
 
         self.pm.change_entry(selection, col_selection, new_field)
         print('---account successfully updated---')
+
+    def add_column_cmd(self):
+        """CLI to add a column to the user's table of accounts"""
+        print('---enter new column name or "exit"---')
+        try:
+            name = get_input_or_exit()
+            self.pm.add_column(name)
+        except UserError as err:
+            print(str(err))
+        except ExitError:
+            return
 
     def logout_cmd(self):
         """logout and exit"""
@@ -203,9 +219,9 @@ def run(pm):
     cli.get_user()
 
 
-def get_input_or_exit():
+def get_input_or_exit(password=False):
     """get user input or raise ExitError"""
-    value = input()
+    value = getpass(prompt='') if password else input()
     if value == 'exit':
         raise ExitError
     return value

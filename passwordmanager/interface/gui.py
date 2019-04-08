@@ -5,7 +5,7 @@ from whoosh.index import create_in, open_dir
 from whoosh.qparser import QueryParser, FuzzyTermPlugin
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
                              QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
-                             QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout)
+                             QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout, QInputDialog)
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
 
@@ -97,18 +97,21 @@ class Login(QDialog):
             self.accept()
 
 
+'''
+get list of all field
+loop through all self.fields, create field and label for each one
+map col to those in dictionary, keep track of indices and put in layout
+'''
 class AddRowDialog(QDialog):
     def __init__(self, pm, parent=None):
         super(AddRowDialog, self).__init__(parent)
         self.pm = pm
-        self.name_label = QLabel('*account name:', self)
-        self.name_field = QLineEdit(self)
-        self.email_label = QLabel('*email:', self)
-        self.email_field = QLineEdit(self)
-        self.password_label = QLabel('*password:', self)
-        self.password_field = QLineEdit(self)
-        self.url_label = QLabel('URL:', self)
-        self.url_field = QLineEdit(self)
+        self.cols = self.pm.get_all_columns()
+        self.labels = []
+        self.fields = []
+        for col in self.cols:
+            self.labels.append(QLabel(f"{col}:", self))
+            self.fields.append(QLineEdit(self))
         self.add_button = QPushButton('add', self)
         self.add_button.clicked.connect(self.handle_add)
         self.cancel_button = QPushButton('cancel', self)
@@ -116,28 +119,31 @@ class AddRowDialog(QDialog):
         self.error_message = QLabel('', self)
 
         layout = QGridLayout(self)
-        layout.addWidget(self.name_label, 0, 0)
-        layout.addWidget(self.name_field, 0, 1)
-        layout.addWidget(self.email_label, 1, 0)
-        layout.addWidget(self.email_field, 1, 1)
-        layout.addWidget(self.password_label, 2, 0)
-        layout.addWidget(self.password_field, 2, 1)
-        layout.addWidget(self.url_label, 3, 0)
-        layout.addWidget(self.url_field, 3, 1)
-        layout.addWidget(self.add_button, 4, 0)
-        layout.addWidget(self.cancel_button, 4, 1)
-        layout.addWidget(self.error_message, 5, 0, 1, 2)
+        for i in range(len(self.cols)):
+            layout.addWidget(self.labels[i], i, 0)
+            layout.addWidget(self.fields[i], i, 1)
+        layout.addWidget(self.add_button, i+1, 0)
+        layout.addWidget(self.cancel_button, i+1, 1)
+        layout.addWidget(self.error_message, i+2, 0, 1, 2)
 
     def handle_add(self):
+        custom_cols = {}
+        if len(self.cols) > 4:
+            for index, col in enumerate(self.cols[4:], 4):
+                print(f"{index}, {col}")
+                custom_cols[col] = self.fields[index].text()
         try:
-            if self.name_field.text() and self.email_field.text() and self.password_field.text():
+            if self.fields[0].text() and self.fields[1].text() and self.fields[2].text():
                 self.pm.add_user_entry(
-                    self.name_field.text(),
-                    self.email_field.text(),
-                    self.password_field.text(),
-                    self.url_field.text()
+                    self.fields[0].text(),
+                    self.fields[1].text(),
+                    self.fields[2].text(),
+                    self.fields[3].text(),
+                    custom_cols
                 )
                 self.accept()
+            else:
+                self.error_message.setText('name, email, and password fields required')
         except AccountError as err:
             self.error_message.setText(str(err))
 
@@ -146,22 +152,22 @@ class AddRowDialog(QDialog):
 
 
 class ModifyDialog(QDialog):
-    def __init__(self, pm, account, parent=None):
+    def __init__(self, pm, account_list, parent=None):
         super(ModifyDialog, self).__init__(parent)
         self.pm = pm
-        self.account = account
-        self.name_label = QLabel('*account name:', self)
-        self.name_field = QLineEdit(self)
-        self.name_field.setText(account['name'])
-        self.email_label = QLabel('*email:', self)
-        self.email_field = QLineEdit(self)
-        self.email_field.setText(account['email'])
-        self.password_label = QLabel('*password:', self)
-        self.password_field = QLineEdit(self)
-        self.password_field.setText(account['password'])
-        self.url_label = QLabel('URL:', self)
-        self.url_field = QLineEdit(self)
-        self.url_field.setText(account['url'])
+        self.account = {}
+        self.labels = []
+        self.fields = []
+        self.cols = self.pm.get_all_columns()
+        for index, col in enumerate(self.cols):
+            if index < len(account_list) and account_list[index]:
+                self.account[col] = account_list[index]
+        for col in self.cols:
+            self.labels.append(QLabel(f"{col}:", self))
+            field = QLineEdit(self)
+            if col in self.account:
+                field.setText(self.account[col])
+            self.fields.append(field)
         self.modify_button = QPushButton('modify', self)
         self.modify_button.clicked.connect(self.handle_modify)
         self.cancel_button = QPushButton('cancel', self)
@@ -169,30 +175,25 @@ class ModifyDialog(QDialog):
         self.error_message = QLabel('', self)
 
         layout = QGridLayout(self)
-        layout.addWidget(self.name_label, 0, 0)
-        layout.addWidget(self.name_field, 0, 1)
-        layout.addWidget(self.email_label, 1, 0)
-        layout.addWidget(self.email_field, 1, 1)
-        layout.addWidget(self.password_label, 2, 0)
-        layout.addWidget(self.password_field, 2, 1)
-        layout.addWidget(self.url_label, 3, 0)
-        layout.addWidget(self.url_field, 3, 1)
-        layout.addWidget(self.modify_button, 4, 0)
-        layout.addWidget(self.cancel_button, 4, 1)
-        layout.addWidget(self.error_message, 5, 0, 1, 2)
+        for i in range(len(self.cols)):
+            layout.addWidget(self.labels[i], i, 0)
+            layout.addWidget(self.fields[i], i, 1)
+        layout.addWidget(self.modify_button, i+1, 0)
+        layout.addWidget(self.cancel_button, i+1, 1)
+        layout.addWidget(self.error_message, i+2, 0, 1, 2)
 
     def handle_modify(self):
         try:
-            if self.name_field.text() and self.email_field.text() and self.password_field.text():
-                if self.name_field.text() != self.account['name']:
-                    self.pm.change_entry(self.account, 'name', self.name_field.text())
-                if self.email_field.text() != self.account['email']:
-                    self.pm.change_entry(self.account, 'email', self.email_field.text())
-                if self.password_field.text() != self.account['password']:
-                    self.pm.change_entry(self.account, 'password', self.password_field.text())
-                if self.url_field.text() != self.account['url']:
-                    self.pm.change_entry(self.account, 'url', self.url_field.text())
+            if self.fields[0].text() and self.fields[1].text() and self.fields[2].text():
+                for index, col in enumerate(self.cols):
+                    if col in self.account:
+                        if self.fields[index].text() != self.account[col]:
+                            self.pm.change_entry(self.account, col, self.fields[index].text())
+                    else:
+                        self.pm.change_entry(self.account, col, self.fields[index].text())
                 self.accept()
+            else:
+                self.error_message.setText('name, email, and password fields required')
         except AccountError as err:
             self.error_message.setText(str(err))
 
@@ -212,25 +213,37 @@ class Window(QMainWindow):
         self.setup_tools()
 
     def setup_table(self, results=[]):
-        if results == []:
-            account_table = self.pm.retrieve_table()
-        else:
-            account_table = results
         self.ui.tableWidget.clearContents()
+        account_table = results or self.pm.retrieve_table()
+        custom_cols = self.pm.user.custom_cols.split(',')
         self.ui.tableWidget.setRowCount(len(account_table))
+        self.ui.tableWidget.setColumnCount(4 + len(custom_cols))
+        col_num = 4
+        for col in custom_cols:
+            item = QTableWidgetItem()
+            self.ui.tableWidget.setHorizontalHeaderItem(col_num, item)
+            item.setText(QtCore.QCoreApplication.translate("MainWindow", col))
+            col_num += 1
         index = 0
         for account in account_table:
-            print(account)
             self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(account['name']))
             self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(account['email']))
             self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(account['password']))
             self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(account['url']))
+            col_num = 4
+            for col in custom_cols:
+                if col in account:
+                    self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(account[col]))
+                else:
+                    self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(''))
+                col_num += 1
             index += 1
 
     def setup_tools(self):
         self.ui.remove_account_button.clicked.connect(lambda: self.handle_remove(self.ui.tableWidget.selectedItems()))
         self.ui.modify_account_button.clicked.connect(lambda: self.handle_modify(self.ui.tableWidget.selectedItems()))
         self.ui.add_account_button.clicked.connect(self.add_dialog)
+        self.ui.add_column_button.clicked.connect(self.handle_add_column)
 
         account_table = self.pm.retrieve_table()
         schema = Schema(name=TEXT(stored=True), email=TEXT(stored=True), password=STORED, url=STORED)
@@ -250,13 +263,10 @@ class Window(QMainWindow):
 
     def handle_modify(self, selected):
         if selected:
-            account = {
-                'name': selected[0].text(),
-                'email': selected[1].text(),
-                'password': selected[2].text(),
-                'url': selected[3].text()
-            }
-            modify_dialog = ModifyDialog(self.pm, account)
+            account_list = []
+            for field in selected:
+                account_list.append(field.text())
+            modify_dialog = ModifyDialog(self.pm, account_list)
             if modify_dialog.exec_() == QDialog.Accepted:
                 self.setup_table()
 
@@ -285,6 +295,15 @@ class Window(QMainWindow):
                 self.setup_table(results)
         else:
             self.setup_table()
+
+    def handle_add_column(self):
+        text, ok = QInputDialog.getText(self, 'Add a column', 'name:', QLineEdit.Normal, '')
+        try:
+            if ok and text != '':
+                self.pm.add_column(text)
+                self.setup_table()
+        except UserError:
+            pass
 
 
 def run(args, pm):
