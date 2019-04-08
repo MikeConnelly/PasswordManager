@@ -75,24 +75,17 @@ def main(args):
             json.dump(path_data, j)
 
     paths = get_paths(path_file)
-
-    if len(args) > 1:
-        arg = args[1]
-    else:
-        arg = 'cli'
+    arg = args[1] if len(args) > 1 else 'cli'
 
     if arg == 'cli':
         pm = password_manager.PasswordManager(paths)
         interface.run(pm)
-
     elif arg == 'gui':
         pm = password_manager.PasswordManager(paths)
         gui.run(args, pm)
-
     elif arg == 'key_dir':
         print('Enter new key directory')
         new_key_dir = input()
-
         if os.path.exists(new_key_dir):
             change_key_dir(path_file, paths, new_key_dir)
             paths = get_paths(path_file)
@@ -100,11 +93,9 @@ def main(args):
         else:
             print('---specified path does not exist---')
             exit()
-
     elif arg == 'database_dir':
         print('Enter new database directory')
         new_database_dir = input()
-
         if os.path.exists(new_database_dir):
             change_database_dir(path_file, paths, new_database_dir)
             paths = get_paths(path_file)
