@@ -154,6 +154,12 @@ class Interface:
 
         try:
             selection = self.select_user_account_cmd('remove')
+            confirmation = ''
+            while confirmation not in ('y', 'Y'):
+                print(f"are you sure you want to remove {selection['name']}? (y/n):")
+                confirmation = input()
+                if confirmation in ('n', 'N'):
+                    return
             self.pm.remove_entry(selection)
         except ExitError:
             return
