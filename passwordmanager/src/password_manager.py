@@ -122,7 +122,7 @@ class PasswordManager:
                     .filter(Account.name == new_field)\
                     .one_or_none() is not None:
                 raise AccountError(f"account with name {new_field} already exists")
-        elif col == 'email' or col == 'password':
+        elif col in ('email', 'password'):
             new_field = self.crypto.encrypt(new_field)
         elif col in self.user.custom_cols.split(','):
             query = self.session.query(Account)\
