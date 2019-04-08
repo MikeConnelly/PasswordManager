@@ -14,6 +14,7 @@ class Account(Base):
     email = Column('email', String)
     password = Column('password', String)
     url = Column('url', String)
+    expansion = Column('expansion', String)
     user_id = Column(Integer, ForeignKey('user_table.id'))
 
 
@@ -25,3 +26,4 @@ class User(Base):
     username = Column('username', String, unique=True)
     master_password = Column('password', String)
     accounts = relationship('Account')
+    custom_cols = Column('custom_cols', String)

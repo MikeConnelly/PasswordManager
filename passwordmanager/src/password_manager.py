@@ -1,4 +1,5 @@
 import os
+import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .crypto import Crypto
@@ -45,7 +46,7 @@ class PasswordManager:
 
     def login(self, username, password):
         """Sets user for current session"""
-        user = self.session.query(User).filter(User.username == username).one_or_none() #throws error if multiple users
+        user = self.session.query(User).filter(User.username == username).one_or_none()
         if user is None:
             raise UserError('user does not exist')
 
@@ -62,25 +63,26 @@ class PasswordManager:
         self.create_user(username, masterpass)
         self.login(username, masterpass)
 
-    # call this function from __init__ and use a class variable to call from interfaces
     def retrieve_table(self):
         """Prints the table of accounts for the current user"""
         table = []
         for account in self.user.accounts:
             entry = {
-                'id': account.id,
                 'name': account.name,
                 'email': self.crypto.decrypt(account.email),
                 'password': self.crypto.decrypt(account.password),
                 'url': account.url
             }
+            if account.expansion:
+                expansion = json.loads(account.expansion)
+                for field, value in expansion.items():
+                    entry[field] = value
             table.append(entry)
         return table
 
-    def add_user_entry(self, account_name, account_email, account_password, account_url=''):
+    def add_user_entry(self, account_name, account_email, account_password, account_url='', custom_cols=None):
         """Add an account to the current user's table"""
 
-        # check if account already exists, throws error if multiple results
         row = self.session.query(Account)\
             .filter(Account.user_id == self.user.id)\
             .filter(Account.name == account_name)\
@@ -97,6 +99,8 @@ class PasswordManager:
         account.password = hashed_pass
         account.url = account_url
         account.user_id = self.user.id
+        if custom_cols:
+            account.expansion = json.dumps(custom_cols)
 
         self.session.add(account)
         self.session.commit()
@@ -120,6 +124,15 @@ class PasswordManager:
                 raise AccountError(f"account with name {new_field} already exists")
         elif col == 'email' or col == 'password':
             new_field = self.crypto.encrypt(new_field)
+        elif col in self.user.custom_cols.split(','):
+            query = self.session.query(Account)\
+                    .filter(Account.user_id == self.user.id)\
+                    .filter(Account.name == account['name'])\
+                    .one()
+            expansion = json.loads(query.expansion) if query.expansion else {}
+            expansion[col] = new_field
+            col = 'expansion'
+            new_field = json.dumps(expansion)
 
         self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
@@ -127,10 +140,29 @@ class PasswordManager:
                 .update({col: new_field})
         self.session.commit()
 
+    def add_column(self, name):
+        """Add a column to the user's table of accounts"""
+        if ',' in name:
+            raise UserError('column names cannot contain ","')
+        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
+        if name in custom_cols:
+            raise UserError(f"column with name {name} already exists")
+        custom_cols.append(name)
+        cols_str = ','.join(custom_cols)
+        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
+        self.session.commit()
+
     def logout(self):
         """Removes user and closes database session"""
         self.user = None
         self.session.close()
+
+    def get_all_columns(self):
+        """Returns all the user's required and custom fields"""
+        all_fields = ['name', 'email', 'password', 'url']
+        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
+        all_fields.extend(custom_cols)
+        return all_fields
 
 
 class UserError(Exception):
