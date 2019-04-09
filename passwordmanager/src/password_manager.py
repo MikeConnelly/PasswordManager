@@ -152,6 +152,31 @@ class PasswordManager:
         self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
         self.session.commit()
 
+    def remove_column(self, name):
+        """Remove a column from the user's custom columns"""
+        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
+        custom_cols.remove(name)
+        cols_str = ','.join(custom_cols)
+        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
+        self.session.commit()
+        # Remove column data from all the user's accounts
+        for account in self.user.accounts:
+            if account.expansion and name in account.expansion:
+                expansion = json.loads(account.expansion)
+                expansion.pop(name)
+                expansion = json.dumps(expansion)
+                self.session.query(Account)\
+                        .filter(Account.user_id == self.user.id)\
+                        .filter(Account.name == account.name)\
+                        .update({'expansion': expansion})
+                self.session.commit()
+
+    def reset_all(self):
+        """remove all user accounts and reset custom columns"""
+        for account in self.user.accounts:
+            query = self.session.query(Account).filter(Account.name == account.name).one()
+            pass
+
     def logout(self):
         """Removes user and closes database session"""
         self.user = None

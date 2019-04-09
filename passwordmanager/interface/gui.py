@@ -3,9 +3,11 @@ import os
 from whoosh.fields import Schema, TEXT, STORED
 from whoosh.index import create_in, open_dir
 from whoosh.qparser import QueryParser, FuzzyTermPlugin
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
-                             QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
-                             QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout, QInputDialog)
+from PyQt5.QtWidgets import (
+    QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
+    QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
+    QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout, QInputDialog
+)
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
 
