@@ -16,7 +16,7 @@ class CreateAccount(QDialog):
         self.pm = pm
         self.name_label = QLabel('account name:', self)
         self.name_field = QLineEdit(self)
-        self.pass_label = QLabel('password name:', self)
+        self.pass_label = QLabel('password:', self)
         self.pass_field = QLineEdit(self)
         self.pass_field.setEchoMode(QLineEdit.Password)
         self.confirm_pass_label = QLabel('confirm password:', self)
@@ -215,7 +215,7 @@ class Window(QMainWindow):
     def setup_table(self, results=[]):
         self.ui.tableWidget.clearContents()
         account_table = results or self.pm.retrieve_table()
-        custom_cols = self.pm.user.custom_cols.split(',')
+        custom_cols = self.pm.user.custom_cols.split(',') # use get all columns
         self.ui.tableWidget.setRowCount(len(account_table))
         self.ui.tableWidget.setColumnCount(4 + len(custom_cols))
         col_num = 4
