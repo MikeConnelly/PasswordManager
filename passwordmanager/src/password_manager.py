@@ -140,6 +140,18 @@ class PasswordManager:
                 .update({col: new_field})
         self.session.commit()
 
+    def get_custom_columns(self):
+        """Returns the user's custom fields"""
+        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
+        return custom_cols
+
+    def get_all_columns(self):
+        """Returns all the user's required and custom fields"""
+        required_fields = ['name', 'email', 'password', 'url']
+        custom_cols = self.get_custom_columns()
+        required_fields.extend(custom_cols)
+        return required_fields
+
     def add_column(self, name):
         """Add a column to the user's table of accounts"""
         if ',' in name:
@@ -173,21 +185,20 @@ class PasswordManager:
 
     def reset_all(self):
         """remove all user accounts and reset custom columns"""
+        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': ''})
+        self.session.commit()
         for account in self.user.accounts:
-            query = self.session.query(Account).filter(Account.name == account.name).one()
-            pass
+            query = self.session.query(Account)\
+                    .filter(Account.user_id == self.user.id)\
+                    .filter(Account.name == account.name)\
+                    .one()
+            self.session.delete(query)
+            self.session.commit()
 
     def logout(self):
         """Removes user and closes database session"""
         self.user = None
         self.session.close()
-
-    def get_all_columns(self):
-        """Returns all the user's required and custom fields"""
-        all_fields = ['name', 'email', 'password', 'url']
-        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
-        all_fields.extend(custom_cols)
-        return all_fields
 
 
 class UserError(Exception):

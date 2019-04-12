@@ -5,7 +5,7 @@ from whoosh.index import create_in, open_dir
 from whoosh.qparser import QueryParser, FuzzyTermPlugin
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
-    QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog,
+    QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog, QComboBox,
     QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout, QInputDialog
 )
 from passwordmanager.src.password_manager import UserError, AccountError
@@ -99,11 +99,6 @@ class Login(QDialog):
             self.accept()
 
 
-'''
-get list of all field
-loop through all self.fields, create field and label for each one
-map col to those in dictionary, keep track of indices and put in layout
-'''
 class AddRowDialog(QDialog):
     def __init__(self, pm, parent=None):
         super(AddRowDialog, self).__init__(parent)
@@ -203,8 +198,42 @@ class ModifyDialog(QDialog):
         self.close()
 
 
+class RemoveColumnDialog(QDialog):
+    def __init__(self, pm, parent=None):
+        super(RemoveColumnDialog, self).__init__(parent)
+        self.resize(190, 120)
+        self.pm = pm
+        self.combo = QComboBox(self)
+        cols = ['']
+        cols.extend(self.pm.get_custom_columns())
+        self.combo.addItems(cols)
+        self.combo.setGeometry(QtCore.QRect(20, 20, 150, 30))
+        self.message = QLabel('', self)
+        self.message.setGeometry(QtCore.QRect(21, 50, 150, 20))
+        self.combo.currentTextChanged.connect(self.update_message)
+        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close, self)
+        self.buttons.setGeometry(20, 75, 150, 20)
+        self.buttons.setEnabled(False)
+        self.buttons.accepted.connect(self.handle_remove)
+        self.buttons.rejected.connect(self.handle_cancel)
+
+    def update_message(self):
+        if self.combo.itemText(0) == '':
+            self.combo.removeItem(0)
+        self.message.setText(f"Remove {self.combo.currentText()} column?")
+        self.buttons.setEnabled(True)
+
+    def handle_remove(self):
+        print(self.combo.currentText)
+        self.pm.remove_column(self.combo.currentText())
+        self.accept()
+
+    def handle_cancel(self):
+        self.close()
+
+
 class Window(QMainWindow):
-    """class docstring"""
+    """Main GUI window"""
 
     def __init__(self, pm, parent=None):
         super(Window, self).__init__(parent)
@@ -217,35 +246,31 @@ class Window(QMainWindow):
     def setup_table(self, results=[]):
         self.ui.tableWidget.clearContents()
         account_table = results or self.pm.retrieve_table()
-        custom_cols = self.pm.user.custom_cols.split(',') # use get all columns
+        columns = self.pm.get_all_columns()
         self.ui.tableWidget.setRowCount(len(account_table))
-        self.ui.tableWidget.setColumnCount(4 + len(custom_cols))
-        col_num = 4
-        for col in custom_cols:
+        self.ui.tableWidget.setColumnCount(len(columns))
+        for index, col in enumerate(columns):
             item = QTableWidgetItem()
-            self.ui.tableWidget.setHorizontalHeaderItem(col_num, item)
+            self.ui.tableWidget.setHorizontalHeaderItem(index, item)
             item.setText(QtCore.QCoreApplication.translate("MainWindow", col))
-            col_num += 1
-        index = 0
-        for account in account_table:
-            self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(account['name']))
-            self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(account['email']))
-            self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(account['password']))
-            self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(account['url']))
-            col_num = 4
-            for col in custom_cols:
+        for index, account in enumerate(account_table):
+            col_num = 0
+            for col in columns:
                 if col in account:
                     self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(account[col]))
                 else:
                     self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(''))
                 col_num += 1
-            index += 1
 
     def setup_tools(self):
-        self.ui.remove_account_button.clicked.connect(lambda: self.handle_remove(self.ui.tableWidget.selectedItems()))
-        self.ui.modify_account_button.clicked.connect(lambda: self.handle_modify(self.ui.tableWidget.selectedItems()))
-        self.ui.add_account_button.clicked.connect(self.add_dialog)
+        self.ui.remove_account_button.clicked.connect(
+            lambda: self.handle_remove_account(self.ui.tableWidget.selectedItems()))
+        self.ui.modify_account_button.clicked.connect(
+            lambda: self.handle_modify(self.ui.tableWidget.selectedItems()))
+        self.ui.add_account_button.clicked.connect(self.handle_add_account)
         self.ui.add_column_button.clicked.connect(self.handle_add_column)
+        self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
+        self.ui.reset_button.clicked.connect(self.handle_reset)
 
         account_table = self.pm.retrieve_table()
         schema = Schema(name=TEXT(stored=True), email=TEXT(stored=True), password=STORED, url=STORED)
@@ -258,7 +283,7 @@ class Window(QMainWindow):
         writer.commit()
         self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
 
-    def add_dialog(self):
+    def handle_add_account(self):
         add_dialog = AddRowDialog(self.pm)
         if add_dialog.exec_() == QDialog.Accepted:
             self.setup_table()
@@ -272,7 +297,7 @@ class Window(QMainWindow):
             if modify_dialog.exec_() == QDialog.Accepted:
                 self.setup_table()
 
-    def handle_remove(self, selected):
+    def handle_remove_account(self, selected):
         if selected:
             account = {
                 'name': selected[0].text(),
@@ -306,6 +331,18 @@ class Window(QMainWindow):
                 self.setup_table()
         except UserError:
             pass
+
+    def handle_remove_column(self):
+        remove_column_dialog = RemoveColumnDialog(self.pm)
+        if remove_column_dialog.exec_() == QDialog.Accepted:
+            self.setup_table()
+
+    def handle_reset(self):
+        quit_msg = 'Are you sure you want to reset your table?'
+        confirm = QMessageBox.question(self, 'Reset Table', quit_msg, QMessageBox.Yes | QMessageBox.No)
+        if confirm == QMessageBox.Yes:
+            self.pm.reset_all()
+            self.setup_table()
 
 
 def run(args, pm):
