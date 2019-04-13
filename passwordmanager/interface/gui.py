@@ -4,9 +4,8 @@ from whoosh.fields import Schema, TEXT, STORED
 from whoosh.index import create_in, open_dir
 from whoosh.qparser import QueryParser, FuzzyTermPlugin
 from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QTableWidget, QTableWidgetItem, QLineEdit,
-    QWidget, QPushButton, QVBoxLayout, QMessageBox, QLabel, QDialog, QComboBox,
-    QToolBar, QGroupBox, QGridLayout, QDialogButtonBox, QHBoxLayout, QInputDialog
+    QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox,
+    QLabel, QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout
 )
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -25,7 +24,7 @@ class CreateAccount(QDialog):
         self.confirm_pass_field = QLineEdit(self)
         self.confirm_pass_field.setEchoMode(QLineEdit.Password)
         self.cancel_button = QPushButton('cancel', self)
-        self.cancel_button.clicked.connect(self.handle_cancel)
+        self.cancel_button.clicked.connect(self.close)
         self.register_button = QPushButton('create account', self)
         self.register_button.clicked.connect(self.handle_register)
         self.error_message = QLabel('', self)
@@ -51,9 +50,6 @@ class CreateAccount(QDialog):
         except UserError as err:
             self.error_message.setText(str(err))
 
-    def handle_cancel(self):
-        self.close()
-
 
 class Login(QDialog):
     def __init__(self, pm, parent=None):
@@ -67,7 +63,7 @@ class Login(QDialog):
         self.login_button = QPushButton('login', self)
         self.login_button.clicked.connect(self.handle_login)
         self.cancel_button = QPushButton('cancel', self)
-        self.cancel_button.clicked.connect(self.handle_cancel)
+        self.cancel_button.clicked.connect(self.close)
         self.create_button = QPushButton('create account', self)
         self.create_button.clicked.connect(self.handle_create)
         self.error_message = QLabel('', self)
@@ -89,9 +85,6 @@ class Login(QDialog):
         except UserError as err:
             QMessageBox.warning(self, 'Error', str(err))
 
-    def handle_cancel(self):
-        self.close()
-
     def handle_create(self):
         self.hide()
         create = CreateAccount(self.pm)
@@ -112,7 +105,7 @@ class AddRowDialog(QDialog):
         self.add_button = QPushButton('add', self)
         self.add_button.clicked.connect(self.handle_add)
         self.cancel_button = QPushButton('cancel', self)
-        self.cancel_button.clicked.connect(self.handle_cancel)
+        self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
 
         layout = QGridLayout(self)
@@ -144,9 +137,6 @@ class AddRowDialog(QDialog):
         except AccountError as err:
             self.error_message.setText(str(err))
 
-    def handle_cancel(self):
-        self.close()
-
 
 class ModifyDialog(QDialog):
     def __init__(self, pm, account_list, parent=None):
@@ -168,7 +158,7 @@ class ModifyDialog(QDialog):
         self.modify_button = QPushButton('modify', self)
         self.modify_button.clicked.connect(self.handle_modify)
         self.cancel_button = QPushButton('cancel', self)
-        self.cancel_button.clicked.connect(self.handle_cancel)
+        self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
 
         layout = QGridLayout(self)
@@ -194,28 +184,26 @@ class ModifyDialog(QDialog):
         except AccountError as err:
             self.error_message.setText(str(err))
 
-    def handle_cancel(self):
-        self.close()
-
 
 class RemoveColumnDialog(QDialog):
     def __init__(self, pm, parent=None):
         super(RemoveColumnDialog, self).__init__(parent)
-        self.resize(190, 120)
         self.pm = pm
         self.combo = QComboBox(self)
         cols = ['']
         cols.extend(self.pm.get_custom_columns())
         self.combo.addItems(cols)
-        self.combo.setGeometry(QtCore.QRect(20, 20, 150, 30))
         self.message = QLabel('', self)
-        self.message.setGeometry(QtCore.QRect(21, 50, 150, 20))
         self.combo.currentTextChanged.connect(self.update_message)
         self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close, self)
-        self.buttons.setGeometry(20, 75, 150, 20)
         self.buttons.setEnabled(False)
         self.buttons.accepted.connect(self.handle_remove)
-        self.buttons.rejected.connect(self.handle_cancel)
+        self.buttons.rejected.connect(self.close)
+
+        vertical_layout = QVBoxLayout(self)
+        vertical_layout.addWidget(self.combo)
+        vertical_layout.addWidget(self.message)
+        vertical_layout.addWidget(self.buttons)
 
     def update_message(self):
         if self.combo.itemText(0) == '':
@@ -224,12 +212,50 @@ class RemoveColumnDialog(QDialog):
         self.buttons.setEnabled(True)
 
     def handle_remove(self):
-        print(self.combo.currentText)
         self.pm.remove_column(self.combo.currentText())
         self.accept()
 
-    def handle_cancel(self):
-        self.close()
+
+class RenameColumnDialog(QDialog):
+    def __init__(self, pm, parent=None):
+        super(RenameColumnDialog, self).__init__(parent)
+        self.pm = pm
+        self.column_to_rename = QLabel('column to rename:', self)
+        self.combo = QComboBox(self)
+        cols = ['']
+        cols.extend(self.pm.get_custom_columns())
+        self.combo.addItems(cols)
+        self.combo.currentTextChanged.connect(self.handle_combo_change)
+        self.new_name_label = QLabel('new name:', self)
+        self.new_name_field = QLineEdit(self)
+        self.new_name_field.textChanged.connect(self.handle_text_change)
+        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close, self)
+        self.buttons.setEnabled(False)
+        self.buttons.accepted.connect(self.handle_rename)
+        self.buttons.rejected.connect(self.close)
+
+        grid_layout = QGridLayout(self)
+        grid_layout.addWidget(self.column_to_rename, 0, 0)
+        grid_layout.addWidget(self.combo, 0, 1)
+        grid_layout.addWidget(self.new_name_label, 1, 0)
+        grid_layout.addWidget(self.new_name_field, 1, 1)
+        grid_layout.addWidget(self.buttons, 2, 0, 1, 2)
+
+    def handle_combo_change(self):
+        if self.combo.itemText(0) == '':
+            self.combo.removeItem(0)
+        if self.new_name_field.text() != '':
+            self.buttons.setEnabled(True)
+
+    def handle_text_change(self):
+        if self.new_name_field.text() != '' and self.combo.itemText(0) != '':
+            self.buttons.setEnabled(True)
+        else:
+            self.buttons.setEnabled(False)
+
+    def handle_rename(self):
+        self.pm.rename_column(self.combo.currentText(), self.new_name_field.text())
+        self.accept()
 
 
 class Window(QMainWindow):
@@ -271,6 +297,9 @@ class Window(QMainWindow):
         self.ui.add_column_button.clicked.connect(self.handle_add_column)
         self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
         self.ui.reset_button.clicked.connect(self.handle_reset)
+        self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
+        self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
+        self.filter_field = 'name'
 
         account_table = self.pm.retrieve_table()
         schema = Schema(name=TEXT(stored=True), email=TEXT(stored=True), password=STORED, url=STORED)
@@ -311,22 +340,10 @@ class Window(QMainWindow):
                 self.pm.remove_entry(account)
                 self.setup_table()
 
-    def handle_search(self, query, field='name'):
-        if query:
-            ix = open_dir('index')
-            with ix.searcher() as searcher:
-                parser = QueryParser(field, ix.schema)
-                parser.add_plugin(FuzzyTermPlugin())
-                myquery = parser.parse(query + '~5')
-                results = searcher.search(myquery)
-                self.setup_table(results)
-        else:
-            self.setup_table()
-
     def handle_add_column(self):
-        text, ok = QInputDialog.getText(self, 'Add a column', 'name:', QLineEdit.Normal, '')
+        text, ok_pressed = QInputDialog.getText(self, 'Add a column', 'name:', QLineEdit.Normal, '')
         try:
-            if ok and text != '':
+            if ok_pressed and text != '':
                 self.pm.add_column(text)
                 self.setup_table()
         except UserError:
@@ -339,10 +356,31 @@ class Window(QMainWindow):
 
     def handle_reset(self):
         quit_msg = 'Are you sure you want to reset your table?'
-        confirm = QMessageBox.question(self, 'Reset Table', quit_msg, QMessageBox.Yes | QMessageBox.No)
+        confirm = QMessageBox\
+                .question(self, 'Reset Table', quit_msg, QMessageBox.Yes | QMessageBox.No)
         if confirm == QMessageBox.Yes:
             self.pm.reset_all()
             self.setup_table()
+
+    def handle_rename_column(self):
+        rename_column_dialog = RenameColumnDialog(self.pm)
+        if rename_column_dialog.exec_() == QDialog.Accepted:
+            self.setup_table()
+
+    def handle_search(self, query):
+        if query:
+            ix = open_dir('index')
+            with ix.searcher() as searcher:
+                parser = QueryParser(self.filter_field, ix.schema)
+                parser.add_plugin(FuzzyTermPlugin())
+                myquery = parser.parse(query + '~1')
+                results = searcher.search(myquery)
+                self.setup_table(results)
+        else:
+            self.setup_table()
+
+    def handle_filter_search(self):
+        pass
 
 
 def run(args, pm):
