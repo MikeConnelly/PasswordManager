@@ -156,7 +156,7 @@ class PasswordManager:
         """Add a column to the user's table of accounts"""
         if ',' in name:
             raise UserError('column names cannot contain ","')
-        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
+        custom_cols = self.get_custom_columns()
         if name in custom_cols:
             raise UserError(f"column with name {name} already exists")
         custom_cols.append(name)
@@ -166,7 +166,7 @@ class PasswordManager:
 
     def remove_column(self, name):
         """Remove a column from the user's custom columns"""
-        custom_cols = self.user.custom_cols.split(',') if self.user.custom_cols else []
+        custom_cols = self.get_custom_columns()
         custom_cols.remove(name)
         cols_str = ','.join(custom_cols)
         self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
@@ -183,8 +183,27 @@ class PasswordManager:
                         .update({'expansion': expansion})
                 self.session.commit()
 
+    def rename_column(self, name, new_name):
+        """Rename a custom column"""
+        custom_cols = self.get_custom_columns()
+        index = custom_cols.index(name)
+        custom_cols[index] = new_name
+        col_str = ','.join(custom_cols)
+        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': col_str})
+        # Rename column in all accounts
+        for account in self.user.accounts:
+            if account.expansion and name in account.expansion:
+                expansion = json.loads(account.expansion)
+                expansion[new_name] = expansion.pop(name)
+                expansion = json.dumps(expansion)
+                self.session.query(Account)\
+                        .filter(Account.user_id == self.user.id)\
+                        .filter(Account.name == account.name)\
+                        .update({'expansion': expansion})
+                self.session.commit()
+
     def reset_all(self):
-        """remove all user accounts and reset custom columns"""
+        """Remove all user accounts and reset custom columns"""
         self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': ''})
         self.session.commit()
         for account in self.user.accounts:
