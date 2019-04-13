@@ -258,6 +258,27 @@ class RenameColumnDialog(QDialog):
         self.accept()
 
 
+class FilterSearchDialog(QDialog):
+    def __init__(self, pm, parent=None):
+        super(FilterSearchDialog, self).__init__(parent)
+        self.pm = pm
+        self.filter_label = QLabel('column to filter by:', self)
+        self.combo = QComboBox(self)
+        self.combo.addItems(self.pm.get_all_columns())
+        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close, self)
+        self.buttons.accepted.connect(self.handle_filter)
+        self.buttons.rejected.connect(self.close)
+
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.filter_label)
+        self.layout.addWidget(self.combo)
+        self.layout.addWidget(self.buttons)
+
+    def handle_filter(self):
+        self.filter_term = self.combo.currentText()
+        self.accept()
+
+
 class Window(QMainWindow):
     """Main GUI window"""
 
@@ -268,6 +289,7 @@ class Window(QMainWindow):
         self.pm = pm
         self.setup_table()
         self.setup_tools()
+        self.filter_field = 'name'
 
     def setup_table(self, results=[]):
         self.ui.tableWidget.clearContents()
@@ -299,7 +321,6 @@ class Window(QMainWindow):
         self.ui.reset_button.clicked.connect(self.handle_reset)
         self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
         self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
-        self.filter_field = 'name'
 
         account_table = self.pm.retrieve_table()
         schema = Schema(name=TEXT(stored=True), email=TEXT(stored=True), password=STORED, url=STORED)
@@ -380,7 +401,10 @@ class Window(QMainWindow):
             self.setup_table()
 
     def handle_filter_search(self):
-        pass
+        filter_search_dialog = FilterSearchDialog(self.pm)
+        if filter_search_dialog.exec_() == QDialog.Accepted:
+            self.filter_field = filter_search_dialog.filter_term
+            self.handle_search(self.ui.search_bar.text())
 
 
 def run(args, pm):

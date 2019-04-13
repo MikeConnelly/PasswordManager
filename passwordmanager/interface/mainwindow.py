@@ -64,7 +64,7 @@ class Ui_MainWindow(object):
         self.rename_column_button.setGeometry(QtCore.QRect(210, 10, 41, 41))
         self.rename_column_button.setObjectName("rename_column_button")
         self.filter_search_button = QtWidgets.QPushButton(self.centralWidget)
-        self.filter_search_button.setGeometry(QtCore.qrect(480, 10, 41, 41))
+        self.filter_search_button.setGeometry(QtCore.QRect(480, 10, 41, 41))
         self.filter_search_button.setObjectName("filter_search_button")
         MainWindow.setCentralWidget(self.centralWidget)
         self.statusBar = QtWidgets.QStatusBar(MainWindow)
