@@ -1,11 +1,8 @@
 import sys
 import os
-from whoosh.fields import Schema, TEXT, STORED
-from whoosh.index import create_in, open_dir
-from whoosh.qparser import QueryParser, FuzzyTermPlugin
 from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox,
-    QLabel, QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout
+    QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
+    QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout
 )
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -68,22 +65,28 @@ class Login(QDialog):
         self.create_button.clicked.connect(self.handle_create)
         self.error_message = QLabel('', self)
 
-        grid_layout = QGridLayout(self)
+        grid_layout = QGridLayout()
         grid_layout.addWidget(self.name_label, 0, 0)
         grid_layout.addWidget(self.name_field, 0, 1)
         grid_layout.addWidget(self.pass_label, 1, 0)
         grid_layout.addWidget(self.pass_field, 1, 1)
-        grid_layout.addWidget(self.login_button, 2, 0)
-        grid_layout.addWidget(self.cancel_button, 2, 1)
-        grid_layout.addWidget(self.create_button, 3, 0)
-        grid_layout.addWidget(self.error_message, 4, 0, 1, 2)
+
+        horizontal_layout = QHBoxLayout()
+        horizontal_layout.addWidget(self.login_button)
+        horizontal_layout.addWidget(self.cancel_button)
+        horizontal_layout.addWidget(self.create_button)
+
+        vertical_layout = QVBoxLayout(self)
+        vertical_layout.addLayout(grid_layout)
+        vertical_layout.addLayout(horizontal_layout)
+        vertical_layout.addWidget(self.error_message)
 
     def handle_login(self):
         try:
             self.pm.login(self.name_field.text(), self.pass_field.text())
             self.accept()
         except UserError as err:
-            QMessageBox.warning(self, 'Error', str(err))
+            self.error_message.setText(str(err))
 
     def handle_create(self):
         self.hide()
@@ -269,10 +272,10 @@ class FilterSearchDialog(QDialog):
         self.buttons.accepted.connect(self.handle_filter)
         self.buttons.rejected.connect(self.close)
 
-        self.layout = QVBoxLayout(self)
-        self.layout.addWidget(self.filter_label)
-        self.layout.addWidget(self.combo)
-        self.layout.addWidget(self.buttons)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.filter_label)
+        layout.addWidget(self.combo)
+        layout.addWidget(self.buttons)
 
     def handle_filter(self):
         self.filter_term = self.combo.currentText()
@@ -291,9 +294,9 @@ class Window(QMainWindow):
         self.setup_tools()
         self.filter_field = 'name'
 
-    def setup_table(self, results=[]):
+    def setup_table(self, results=None):
         self.ui.tableWidget.clearContents()
-        account_table = results or self.pm.retrieve_table()
+        account_table = results if results is not None else self.pm.retrieve_table()
         columns = self.pm.get_all_columns()
         self.ui.tableWidget.setRowCount(len(account_table))
         self.ui.tableWidget.setColumnCount(len(columns))
@@ -321,16 +324,6 @@ class Window(QMainWindow):
         self.ui.reset_button.clicked.connect(self.handle_reset)
         self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
         self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
-
-        account_table = self.pm.retrieve_table()
-        schema = Schema(name=TEXT(stored=True), email=TEXT(stored=True), password=STORED, url=STORED)
-        if not os.path.exists('index'):
-            os.mkdir('index')
-        ix = create_in('index', schema)
-        writer = ix.writer()
-        for account in account_table:
-            writer.add_document(name=account['name'], email=account['email'], password=account['password'], url=account['url'])
-        writer.commit()
         self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
 
     def handle_add_account(self):
@@ -390,13 +383,11 @@ class Window(QMainWindow):
 
     def handle_search(self, query):
         if query:
-            ix = open_dir('index')
-            with ix.searcher() as searcher:
-                parser = QueryParser(self.filter_field, ix.schema)
-                parser.add_plugin(FuzzyTermPlugin())
-                myquery = parser.parse(query + '~1')
-                results = searcher.search(myquery)
-                self.setup_table(results)
+            results = []
+            for account in self.pm.retrieve_table():
+                if self.filter_field in account and query in account[self.filter_field]:
+                    results.append(account)
+            self.setup_table(results)
         else:
             self.setup_table()
 
