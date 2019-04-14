@@ -1,23 +1,15 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'mainwindow.ui'
-#
-# Created by: PyQt5 UI code generator 5.12
-#
-# WARNING! All changes made in this file will be lost!
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(700, 581)
         self.centralWidget = QtWidgets.QWidget(MainWindow)
         self.centralWidget.setObjectName("centralWidget")
+        vertical_layout = QtWidgets.QVBoxLayout(self.centralWidget)
+        horizontal_layout = QtWidgets.QHBoxLayout()
         self.tableWidget = QtWidgets.QTableWidget(self.centralWidget)
         self.tableWidget.setEnabled(True)
-        self.tableWidget.setGeometry(QtCore.QRect(0, 60, 701, 521))
         self.tableWidget.setAutoScroll(True)
         self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -39,40 +31,59 @@ class Ui_MainWindow(object):
         self.tableWidget.verticalHeader().setCascadingSectionResizes(False)
         self.tableWidget.verticalHeader().setDefaultSectionSize(50)
         self.tableWidget.verticalHeader().setMinimumSectionSize(50)
+        self.tableWidget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
         self.search_bar = QtWidgets.QLineEdit(self.centralWidget)
-        self.search_bar.setGeometry(QtCore.QRect(360, 10, 120, 41))
         self.search_bar.setObjectName("search_bar")
+        self.search_bar.setMinimumSize(60, 40)
         self.modify_account_button = QtWidgets.QPushButton(self.centralWidget)
-        self.modify_account_button.setGeometry(QtCore.QRect(60, 10, 41, 41))
         self.modify_account_button.setObjectName("modify_account_button")
+        self.modify_account_button.setMinimumSize(40, 40)
+        self.modify_account_button.setMaximumSize(40, 40)
         self.remove_account_button = QtWidgets.QPushButton(self.centralWidget)
-        self.remove_account_button.setGeometry(QtCore.QRect(110, 10, 41, 41))
         self.remove_account_button.setObjectName("remove_account_button")
+        self.remove_account_button.setMinimumSize(40, 40)
+        self.remove_account_button.setMaximumSize(40, 40)
         self.add_account_button = QtWidgets.QPushButton(self.centralWidget)
-        self.add_account_button.setGeometry(QtCore.QRect(10, 10, 41, 41))
         self.add_account_button.setObjectName("add_account_button")
+        self.add_account_button.setMinimumSize(40, 40)
+        self.add_account_button.setMaximumSize(40, 40)
         self.add_column_button = QtWidgets.QPushButton(self.centralWidget)
-        self.add_column_button.setGeometry(QtCore.QRect(160, 10, 41, 41))
         self.add_column_button.setObjectName("add_column_button")
+        self.add_column_button.setMinimumSize(40, 40)
+        self.add_column_button.setMaximumSize(40, 40)
         self.remove_column_button = QtWidgets.QPushButton(self.centralWidget)
-        self.remove_column_button.setGeometry(QtCore.QRect(260, 10, 41, 41))
         self.remove_column_button.setObjectName("remove_column_button")
+        self.remove_column_button.setMinimumSize(40, 40)
+        self.remove_column_button.setMaximumSize(40, 40)
         self.reset_button = QtWidgets.QPushButton(self.centralWidget)
-        self.reset_button.setGeometry(QtCore.QRect(310, 10, 41, 41))
         self.reset_button.setObjectName("reset_button")
+        self.reset_button.setMinimumSize(40, 40)
+        self.reset_button.setMaximumSize(40, 40)
         self.rename_column_button = QtWidgets.QPushButton(self.centralWidget)
-        self.rename_column_button.setGeometry(QtCore.QRect(210, 10, 41, 41))
         self.rename_column_button.setObjectName("rename_column_button")
+        self.rename_column_button.setMinimumSize(40, 40)
+        self.rename_column_button.setMaximumSize(40, 40)
         self.filter_search_button = QtWidgets.QPushButton(self.centralWidget)
-        self.filter_search_button.setGeometry(QtCore.QRect(480, 10, 41, 41))
         self.filter_search_button.setObjectName("filter_search_button")
+        self.filter_search_button.setMinimumSize(40, 40)
+        self.filter_search_button.setMaximumSize(40, 40)
         MainWindow.setCentralWidget(self.centralWidget)
         self.statusBar = QtWidgets.QStatusBar(MainWindow)
         self.statusBar.setObjectName("statusBar")
         MainWindow.setStatusBar(self.statusBar)
 
+        horizontal_layout.addWidget(self.add_account_button)
+        horizontal_layout.addWidget(self.modify_account_button)
+        horizontal_layout.addWidget(self.remove_account_button)
+        horizontal_layout.addWidget(self.add_column_button)
+        horizontal_layout.addWidget(self.rename_column_button)
+        horizontal_layout.addWidget(self.remove_column_button)
+        horizontal_layout.addWidget(self.reset_button)
+        horizontal_layout.addWidget(self.search_bar)
+        horizontal_layout.addWidget(self.filter_search_button)
+        vertical_layout.addLayout(horizontal_layout)
+        vertical_layout.addWidget(self.tableWidget)
         self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate

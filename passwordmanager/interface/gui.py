@@ -2,7 +2,8 @@ import sys
 import os
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
-    QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout
+    QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
+    QMenu, QAction
 )
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -305,13 +306,11 @@ class Window(QMainWindow):
             self.ui.tableWidget.setHorizontalHeaderItem(index, item)
             item.setText(QtCore.QCoreApplication.translate("MainWindow", col))
         for index, account in enumerate(account_table):
-            col_num = 0
-            for col in columns:
+            for col_num, col in enumerate(columns):
                 if col in account:
                     self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(account[col]))
                 else:
                     self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(''))
-                col_num += 1
 
     def setup_tools(self):
         self.ui.remove_account_button.clicked.connect(
@@ -325,6 +324,13 @@ class Window(QMainWindow):
         self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
         self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
         self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
+        #self.ui.tableWidget.contextMenuEvent
+#    def contextMenuEvent(self, event):
+#        self.menu = QMenu(self)
+#        color_action = QAction('color row', self)
+#        color_action.triggered.connect(self.color_row)
+#        self.menu.addAction(color_action)
+#        self.menu.popup(QtGui.QCursor.pos())
 
     def handle_add_account(self):
         add_dialog = AddRowDialog(self.pm)
@@ -333,9 +339,7 @@ class Window(QMainWindow):
 
     def handle_modify(self, selected):
         if selected:
-            account_list = []
-            for field in selected:
-                account_list.append(field.text())
+            account_list = [field.text() for field in selected]
             modify_dialog = ModifyDialog(self.pm, account_list)
             if modify_dialog.exec_() == QDialog.Accepted:
                 self.setup_table()
@@ -396,6 +400,9 @@ class Window(QMainWindow):
         if filter_search_dialog.exec_() == QDialog.Accepted:
             self.filter_field = filter_search_dialog.filter_term
             self.handle_search(self.ui.search_bar.text())
+
+    def color_row(self):
+        pass
 
 
 def run(args, pm):
