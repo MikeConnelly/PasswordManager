@@ -324,13 +324,11 @@ class Window(QMainWindow):
         self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
         self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
         self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
-        #self.ui.tableWidget.contextMenuEvent
-#    def contextMenuEvent(self, event):
-#        self.menu = QMenu(self)
-#        color_action = QAction('color row', self)
-#        color_action.triggered.connect(self.color_row)
-#        self.menu.addAction(color_action)
-#        self.menu.popup(QtGui.QCursor.pos())
+
+        color_action = QAction('color row', self)
+        color_action.triggered.connect(self.color_row)
+        self.ui.tableWidget.addAction(color_action)
+        self.ui.tableWidget.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
     def handle_add_account(self):
         add_dialog = AddRowDialog(self.pm)
@@ -402,7 +400,8 @@ class Window(QMainWindow):
             self.handle_search(self.ui.search_bar.text())
 
     def color_row(self):
-        pass
+        for item in self.ui.tableWidget.selectedItems():
+            item.setBackground(QtCore.Qt.red)
 
 
 def run(args, pm):
