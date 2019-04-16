@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
     QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
-    QMenu, QAction, QColorDialog
+    QMenu, QAction, QColorDialog, QStatusBar
 )
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -26,6 +26,7 @@ class CreateAccount(QDialog):
         self.cancel_button = QPushButton('cancel', self)
         self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
+        self.setWindowTitle('Create Account')
 
         grid_layout = QGridLayout()
         grid_layout.addWidget(self.name_label, 0, 0)
@@ -71,6 +72,7 @@ class Login(QDialog):
         self.create_button = QPushButton('create account', self)
         self.create_button.clicked.connect(self.handle_create)
         self.error_message = QLabel('', self)
+        self.setWindowTitle('Login')
 
         grid_layout = QGridLayout()
         grid_layout.addWidget(self.name_label, 0, 0)
@@ -117,6 +119,7 @@ class AddRowDialog(QDialog):
         self.cancel_button = QPushButton('cancel', self)
         self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
+        self.setWindowTitle('Add Account')
 
         layout = QGridLayout(self)
         for i in range(len(self.cols)):
@@ -170,6 +173,7 @@ class ModifyDialog(QDialog):
         self.cancel_button = QPushButton('cancel', self)
         self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
+        self.setWindowTitle('Modify Account')
 
         layout = QGridLayout(self)
         for i in range(len(self.cols)):
@@ -209,6 +213,7 @@ class RemoveColumnDialog(QDialog):
         self.buttons.setEnabled(False)
         self.buttons.accepted.connect(self.handle_remove)
         self.buttons.rejected.connect(self.close)
+        self.setWindowTitle('Remove Column')
 
         vertical_layout = QVBoxLayout(self)
         vertical_layout.addWidget(self.combo)
@@ -243,6 +248,7 @@ class RenameColumnDialog(QDialog):
         self.buttons.setEnabled(False)
         self.buttons.accepted.connect(self.handle_rename)
         self.buttons.rejected.connect(self.close)
+        self.setWindowTitle('Rename Column')
 
         grid_layout = QGridLayout(self)
         grid_layout.addWidget(self.column_to_rename, 0, 0)
@@ -278,6 +284,7 @@ class FilterSearchDialog(QDialog):
         self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close, self)
         self.buttons.accepted.connect(self.handle_filter)
         self.buttons.rejected.connect(self.close)
+        self.setWindowTitle('Filter Search')
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.filter_label)
