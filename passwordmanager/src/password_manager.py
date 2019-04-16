@@ -219,6 +219,24 @@ class PasswordManager:
         self.user = None
         self.session.close()
 
+    def color_row(self, name, color):
+        query = self.session.query(Account)\
+                .filter(Account.user_id == self.user.id)\
+                .filter(Account.name == name)
+        account = query.one()
+        extras = json.loads(account.extras) if account.extras else {}
+        extras['color'] = color
+        query.update({'extras': json.dumps(extras)})
+        self.session.commit()
+
+    def get_row_color(self, name):
+        account = self.session.query(Account)\
+                .filter(Account.user_id == self.user.id)\
+                .filter(Account.name == name)\
+                .one()
+        extras = json.loads(account.extras) if account.extras else {}
+        return extras['color'] if 'color' in extras else None
+
 
 class UserError(Exception):
     """user exception docstring"""

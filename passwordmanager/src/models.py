@@ -15,6 +15,7 @@ class Account(Base):
     password = Column('password', String)
     url = Column('url', String)
     expansion = Column('expansion', String)
+    extras = Column('extras', String)
     user_id = Column(Integer, ForeignKey('user_table.id'))
 
 

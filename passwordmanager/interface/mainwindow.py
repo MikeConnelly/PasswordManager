@@ -13,6 +13,7 @@ class Ui_MainWindow(object):
         self.tableWidget.setAutoScroll(True)
         self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.setShowGrid(True)
         self.tableWidget.setGridStyle(QtCore.Qt.SolidLine)
         self.tableWidget.setObjectName("tableWidget")

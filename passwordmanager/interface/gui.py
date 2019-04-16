@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
     QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
-    QMenu, QAction
+    QMenu, QAction, QColorDialog
 )
 from passwordmanager.src.password_manager import UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -21,22 +21,28 @@ class CreateAccount(QDialog):
         self.confirm_pass_label = QLabel('confirm password:', self)
         self.confirm_pass_field = QLineEdit(self)
         self.confirm_pass_field.setEchoMode(QLineEdit.Password)
-        self.cancel_button = QPushButton('cancel', self)
-        self.cancel_button.clicked.connect(self.close)
         self.register_button = QPushButton('create account', self)
         self.register_button.clicked.connect(self.handle_register)
+        self.cancel_button = QPushButton('cancel', self)
+        self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
 
-        grid_layout = QGridLayout(self)
+        grid_layout = QGridLayout()
         grid_layout.addWidget(self.name_label, 0, 0)
         grid_layout.addWidget(self.name_field, 0, 1)
         grid_layout.addWidget(self.pass_label, 1, 0)
         grid_layout.addWidget(self.pass_field, 1, 1)
         grid_layout.addWidget(self.confirm_pass_label, 2, 0)
         grid_layout.addWidget(self.confirm_pass_field, 2, 1)
-        grid_layout.addWidget(self.register_button, 3, 0)
-        grid_layout.addWidget(self.cancel_button, 3, 1)
-        grid_layout.addWidget(self.error_message, 4, 0, 1, 2)
+
+        horizontal_layout = QHBoxLayout()
+        horizontal_layout.addWidget(self.register_button)
+        horizontal_layout.addWidget(self.cancel_button)
+
+        vertical_layout = QVBoxLayout(self)
+        vertical_layout.addLayout(grid_layout)
+        vertical_layout.addLayout(horizontal_layout)
+        vertical_layout.addWidget(self.error_message)
 
     def handle_register(self):
         try:
@@ -308,9 +314,14 @@ class Window(QMainWindow):
         for index, account in enumerate(account_table):
             for col_num, col in enumerate(columns):
                 if col in account:
-                    self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(account[col]))
+                    item = QTableWidgetItem(account[col])
+                    self.ui.tableWidget.setItem(index, col_num, item)
                 else:
+                    item = QTableWidgetItem(account[col])
                     self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(''))
+                color = get_color_object(self.pm, account['name'])
+                if color:
+                    item.setBackground(color)
 
     def setup_tools(self):
         self.ui.remove_account_button.clicked.connect(
@@ -400,8 +411,22 @@ class Window(QMainWindow):
             self.handle_search(self.ui.search_bar.text())
 
     def color_row(self):
-        for item in self.ui.tableWidget.selectedItems():
-            item.setBackground(QtCore.Qt.red)
+        row_name = self.ui.tableWidget.selectedItems()[0].text()
+        curr_color = get_color_object(self.pm, row_name)
+        color_dialog = QColorDialog.getColor(curr_color) if curr_color else QColorDialog.getColor()
+        if color_dialog.isValid():
+            rgba = color_dialog.getRgb()
+            color = ','.join(str(x) for x in rgba)
+            self.pm.color_row(row_name, color)
+            self.setup_table()
+
+
+def get_color_object(pm, name):
+    color = pm.get_row_color(name)
+    rgba = None
+    if color:
+        rgba = [int(x) for x in color.split(',')]
+    return QtGui.QColor(*rgba) if rgba else None
 
 
 def run(args, pm):
