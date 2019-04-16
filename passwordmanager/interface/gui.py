@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
     QMenu, QAction, QColorDialog, QStatusBar
 )
-from passwordmanager.src.password_manager import UserError, AccountError
+from passwordmanager.src.password_manager import generate_password, UserError, AccountError
 from passwordmanager.interface.mainwindow import *
 
 
@@ -27,6 +27,11 @@ class CreateAccount(QDialog):
         self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
         self.setWindowTitle('Create Account')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         grid_layout = QGridLayout()
         grid_layout.addWidget(self.name_label, 0, 0)
@@ -73,6 +78,11 @@ class Login(QDialog):
         self.create_button.clicked.connect(self.handle_create)
         self.error_message = QLabel('', self)
         self.setWindowTitle('Login')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         grid_layout = QGridLayout()
         grid_layout.addWidget(self.name_label, 0, 0)
@@ -109,22 +119,36 @@ class AddRowDialog(QDialog):
         super(AddRowDialog, self).__init__(parent)
         self.pm = pm
         self.cols = self.pm.get_all_columns()
-        self.labels = []
-        self.fields = []
+        self.labels, self.fields = ([], [])
         for col in self.cols:
             self.labels.append(QLabel(f"{col}:", self))
             self.fields.append(QLineEdit(self))
+            if col == 'password':
+                pass_field = self.fields[-1]
+                self.generate_password_button = QPushButton('G', self)
+                self.generate_password_button.setMinimumSize(20, 20)
+                self.generate_password_button.setMaximumSize(20, 20)
+                self.generate_password_button.clicked.connect(
+                    lambda: pass_field.setText(generate_password(16))
+                )
         self.add_button = QPushButton('add', self)
         self.add_button.clicked.connect(self.handle_add)
         self.cancel_button = QPushButton('cancel', self)
         self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
         self.setWindowTitle('Add Account')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         layout = QGridLayout(self)
         for i in range(len(self.cols)):
             layout.addWidget(self.labels[i], i, 0)
             layout.addWidget(self.fields[i], i, 1)
+            if self.cols[i] == 'password':
+                layout.addWidget(self.generate_password_button, i, 2)
         layout.addWidget(self.add_button, i+1, 0)
         layout.addWidget(self.cancel_button, i+1, 1)
         layout.addWidget(self.error_message, i+2, 0, 1, 2)
@@ -156,8 +180,7 @@ class ModifyDialog(QDialog):
         super(ModifyDialog, self).__init__(parent)
         self.pm = pm
         self.account = {}
-        self.labels = []
-        self.fields = []
+        self.labels, self.fields = ([], [])
         self.cols = self.pm.get_all_columns()
         for index, col in enumerate(self.cols):
             if index < len(account_list) and account_list[index]:
@@ -168,17 +191,32 @@ class ModifyDialog(QDialog):
             if col in self.account:
                 field.setText(self.account[col])
             self.fields.append(field)
+            if col == 'password':
+                pass_field = self.fields[-1]
+                self.generate_password_button = QPushButton('G', self)
+                self.generate_password_button.setMinimumSize(20, 20)
+                self.generate_password_button.setMaximumSize(20, 20)
+                self.generate_password_button.clicked.connect(
+                    lambda: pass_field.setText(generate_password(16))
+                )
         self.modify_button = QPushButton('modify', self)
         self.modify_button.clicked.connect(self.handle_modify)
         self.cancel_button = QPushButton('cancel', self)
         self.cancel_button.clicked.connect(self.close)
         self.error_message = QLabel('', self)
         self.setWindowTitle('Modify Account')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         layout = QGridLayout(self)
         for i in range(len(self.cols)):
             layout.addWidget(self.labels[i], i, 0)
             layout.addWidget(self.fields[i], i, 1)
+            if self.cols[i] == 'password':
+                layout.addWidget(self.generate_password_button, i, 2)
         layout.addWidget(self.modify_button, i+1, 0)
         layout.addWidget(self.cancel_button, i+1, 1)
         layout.addWidget(self.error_message, i+2, 0, 1, 2)
@@ -214,6 +252,11 @@ class RemoveColumnDialog(QDialog):
         self.buttons.accepted.connect(self.handle_remove)
         self.buttons.rejected.connect(self.close)
         self.setWindowTitle('Remove Column')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         vertical_layout = QVBoxLayout(self)
         vertical_layout.addWidget(self.combo)
@@ -249,6 +292,11 @@ class RenameColumnDialog(QDialog):
         self.buttons.accepted.connect(self.handle_rename)
         self.buttons.rejected.connect(self.close)
         self.setWindowTitle('Rename Column')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         grid_layout = QGridLayout(self)
         grid_layout.addWidget(self.column_to_rename, 0, 0)
@@ -285,6 +333,11 @@ class FilterSearchDialog(QDialog):
         self.buttons.accepted.connect(self.handle_filter)
         self.buttons.rejected.connect(self.close)
         self.setWindowTitle('Filter Search')
+        self.setWindowFlags(
+            QtCore.Qt.WindowCloseButtonHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowTitleHint
+        )
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.filter_label)
@@ -324,17 +377,19 @@ class Window(QMainWindow):
                     item = QTableWidgetItem(account[col])
                     self.ui.tableWidget.setItem(index, col_num, item)
                 else:
-                    item = QTableWidgetItem(account[col])
-                    self.ui.tableWidget.setItem(index, col_num, QTableWidgetItem(''))
+                    item = QTableWidgetItem('')
+                    self.ui.tableWidget.setItem(index, col_num, item)
                 color = get_color_object(self.pm, account['name'])
                 if color:
                     item.setBackground(color)
 
     def setup_tools(self):
         self.ui.remove_account_button.clicked.connect(
-            lambda: self.handle_remove_account(self.ui.tableWidget.selectedItems()))
+            lambda: self.handle_remove_account(self.ui.tableWidget.selectedItems())
+        )
         self.ui.modify_account_button.clicked.connect(
-            lambda: self.handle_modify(self.ui.tableWidget.selectedItems()))
+            lambda: self.handle_modify(self.ui.tableWidget.selectedItems())
+        )
         self.ui.add_account_button.clicked.connect(self.handle_add_account)
         self.ui.add_column_button.clicked.connect(self.handle_add_column)
         self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
@@ -343,8 +398,14 @@ class Window(QMainWindow):
         self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
         self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
 
+        modify_action = QAction('modify account', self)
+        modify_action.triggered.connect(self.handle_add_account)
+        remove_action = QAction('remove account', self)
+        remove_action.triggered.connect(self.handle_remove_account)
         color_action = QAction('color row', self)
         color_action.triggered.connect(self.color_row)
+        self.ui.tableWidget.addAction(modify_action)
+        self.ui.tableWidget.addAction(remove_action)
         self.ui.tableWidget.addAction(color_action)
         self.ui.tableWidget.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 

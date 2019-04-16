@@ -1,5 +1,6 @@
 import os
 import json
+import random
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .crypto import Crypto
@@ -124,7 +125,7 @@ class PasswordManager:
                 raise AccountError(f"account with name {new_field} already exists")
         elif col in ('email', 'password'):
             new_field = self.crypto.encrypt(new_field)
-        elif col in self.user.custom_cols.split(','):
+        elif col in self.get_custom_columns():
             query = self.session.query(Account)\
                     .filter(Account.user_id == self.user.id)\
                     .filter(Account.name == account['name'])\
@@ -236,6 +237,13 @@ class PasswordManager:
                 .one()
         extras = json.loads(account.extras) if account.extras else {}
         return extras['color'] if 'color' in extras else None
+
+
+def generate_password(pass_len):
+    """generate random password of length pass_len"""
+    s = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?"
+    password = ''.join(random.sample(s, pass_len))
+    return password
 
 
 class UserError(Exception):
