@@ -106,39 +106,40 @@ class PasswordManager:
         self.session.add(account)
         self.session.commit()
 
-    def remove_entry(self, account):
+    def remove_entry(self, account_name):
         """Removes an account from the current user's table"""
         row = self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == account['name'])\
+                .filter(Account.name == account_name)\
                 .one()
         self.session.delete(row)
         self.session.commit()
 
-    def change_entry(self, account, col, new_field):
-        """Changes a field in an account"""
-        if col == 'name':
-            if self.session.query(Account)\
-                    .filter(Account.user_id == self.user.id)\
-                    .filter(Account.name == new_field)\
-                    .one_or_none() is not None:
-                raise AccountError(f"account with name {new_field} already exists")
-        elif col in ('email', 'password'):
-            new_field = self.crypto.encrypt(new_field)
-        elif col in self.get_custom_columns():
-            query = self.session.query(Account)\
-                    .filter(Account.user_id == self.user.id)\
-                    .filter(Account.name == account['name'])\
-                    .one()
-            expansion = json.loads(query.expansion) if query.expansion else {}
-            expansion[col] = new_field
-            col = 'expansion'
-            new_field = json.dumps(expansion)
-
-        self.session.query(Account)\
+    def change_entry(self, account_name, cols, new_fields):
+        """Changes multiple fields in accounts"""
+        account_id = self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == account['name'])\
-                .update({col: new_field})
+                .filter(Account.name == account_name)\
+                .one()\
+                .id
+        query = self.session.query(Account).filter(Account.id == account_id)
+        account = query.one()
+        for col, new_field in zip(cols, new_fields):
+            update_col, update_field = (col, new_field)
+            if col == 'name':
+                if self.session.query(Account)\
+                        .filter(Account.user_id == self.user.id)\
+                        .filter(Account.name == new_field)\
+                        .one_or_none() is not None:
+                    raise AccountError(f"account with name {new_field} already exists")
+            elif col in ('email', 'password'):
+                update_field = self.crypto.encrypt(new_field)
+            elif col in self.get_custom_columns():
+                expansion = json.loads(account.expansion) if account.expansion else {}
+                expansion[col] = new_field
+                update_col = 'expansion'
+                update_field = json.dumps(expansion)
+            query.update({update_col: update_field})
         self.session.commit()
 
     def get_custom_columns(self):
@@ -220,20 +221,20 @@ class PasswordManager:
         self.user = None
         self.session.close()
 
-    def color_row(self, name, color):
+    def color_row(self, account_name, color):
         query = self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == name)
+                .filter(Account.name == account_name)
         account = query.one()
         extras = json.loads(account.extras) if account.extras else {}
         extras['color'] = color
         query.update({'extras': json.dumps(extras)})
         self.session.commit()
 
-    def get_row_color(self, name):
+    def get_row_color(self, account_name):
         account = self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == name)\
+                .filter(Account.name == account_name)\
                 .one()
         extras = json.loads(account.extras) if account.extras else {}
         return extras['color'] if 'color' in extras else None
@@ -241,8 +242,8 @@ class PasswordManager:
 
 def generate_password(pass_len):
     """generate random password of length pass_len"""
-    s = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?"
-    password = ''.join(random.sample(s, pass_len))
+    chars = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?"
+    password = ''.join(random.sample(chars, pass_len))
     return password
 
 

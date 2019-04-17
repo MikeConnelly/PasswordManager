@@ -224,12 +224,16 @@ class ModifyDialog(QDialog):
     def handle_modify(self):
         try:
             if self.fields[0].text() and self.fields[1].text() and self.fields[2].text():
+                cols, new_fields = ([], [])
                 for index, col in enumerate(self.cols):
                     if col in self.account:
                         if self.fields[index].text() != self.account[col]:
-                            self.pm.change_entry(self.account, col, self.fields[index].text())
+                            cols.append(col)
+                            new_fields.append(self.fields[index].text())
                     else:
-                        self.pm.change_entry(self.account, col, self.fields[index].text())
+                        cols.append(col)
+                        new_fields.append(self.fields[index].text())
+                self.pm.change_entry(self.account['name'], cols, new_fields)
                 self.accept()
             else:
                 self.error_message.setText('name, email, and password fields required')
@@ -338,7 +342,6 @@ class FilterSearchDialog(QDialog):
             | QtCore.Qt.WindowSystemMenuHint
             | QtCore.Qt.WindowTitleHint
         )
-
         layout = QVBoxLayout(self)
         layout.addWidget(self.filter_label)
         layout.addWidget(self.combo)
@@ -384,22 +387,18 @@ class Window(QMainWindow):
                     item.setBackground(color)
 
     def setup_tools(self):
-        self.ui.remove_account_button.clicked.connect(
-            lambda: self.handle_remove_account(self.ui.tableWidget.selectedItems())
-        )
-        self.ui.modify_account_button.clicked.connect(
-            lambda: self.handle_modify(self.ui.tableWidget.selectedItems())
-        )
         self.ui.add_account_button.clicked.connect(self.handle_add_account)
+        self.ui.modify_account_button.clicked.connect(self.handle_modify)
+        self.ui.remove_account_button.clicked.connect(self.handle_remove_account)
         self.ui.add_column_button.clicked.connect(self.handle_add_column)
+        self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
         self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
         self.ui.reset_button.clicked.connect(self.handle_reset)
-        self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
+        self.ui.search_bar.textEdited.connect(self.handle_search)
         self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
-        self.ui.search_bar.textEdited.connect(lambda: self.handle_search(self.ui.search_bar.text()))
 
         modify_action = QAction('modify account', self)
-        modify_action.triggered.connect(self.handle_add_account)
+        modify_action.triggered.connect(self.handle_modify)
         remove_action = QAction('remove account', self)
         remove_action.triggered.connect(self.handle_remove_account)
         color_action = QAction('color row', self)
@@ -414,25 +413,21 @@ class Window(QMainWindow):
         if add_dialog.exec_() == QDialog.Accepted:
             self.setup_table()
 
-    def handle_modify(self, selected):
+    def handle_modify(self):
+        selected = self.ui.tableWidget.selectedItems()
         if selected:
             account_list = [field.text() for field in selected]
             modify_dialog = ModifyDialog(self.pm, account_list)
             if modify_dialog.exec_() == QDialog.Accepted:
                 self.setup_table()
 
-    def handle_remove_account(self, selected):
-        if selected:
-            account = {
-                'name': selected[0].text(),
-                'email': selected[1].text(),
-                'password': selected[2].text(),
-                'url': selected[3].text()
-            }
-            msg = f"Are you sure you want to remove {account['name']}"
+    def handle_remove_account(self):
+        if self.ui.tableWidget.selectedItems():
+            account_name = self.ui.tableWidget.selectedItems()[0].text()
+            msg = f"Are you sure you want to remove {account_name}"
             choice = QMessageBox.question(self, 'Remove?', msg, QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
-                self.pm.remove_entry(account)
+                self.pm.remove_entry(account_name)
                 self.setup_table()
 
     def handle_add_column(self):
@@ -462,7 +457,8 @@ class Window(QMainWindow):
         if rename_column_dialog.exec_() == QDialog.Accepted:
             self.setup_table()
 
-    def handle_search(self, query):
+    def handle_search(self):
+        query = self.ui.search_bar.text()
         if query:
             results = []
             for account in self.pm.retrieve_table():
@@ -476,7 +472,7 @@ class Window(QMainWindow):
         filter_search_dialog = FilterSearchDialog(self.pm)
         if filter_search_dialog.exec_() == QDialog.Accepted:
             self.filter_field = filter_search_dialog.filter_term
-            self.handle_search(self.ui.search_bar.text())
+            self.handle_search()
 
     def color_row(self):
         row_name = self.ui.tableWidget.selectedItems()[0].text()
