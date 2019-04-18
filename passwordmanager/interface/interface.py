@@ -231,7 +231,7 @@ class Interface:
             return
         print('Enter new column name:')
         new_name = input()
-        self.pm.rename_column(selection, new_name)
+        self.pm.rename_column(name, new_name)
 
     def remove_column_cmd(self):
         """CLI to remove a custom column from the user's account table"""
