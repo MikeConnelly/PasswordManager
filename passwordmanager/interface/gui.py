@@ -422,8 +422,9 @@ class Window(QMainWindow):
                 self.setup_table()
 
     def handle_remove_account(self):
-        if self.ui.tableWidget.selectedItems():
-            account_name = self.ui.tableWidget.selectedItems()[0].text()
+        selected = self.ui.tableWidget.selectedItems()
+        if selected:
+            account_name = selected[0].text()
             msg = f"Are you sure you want to remove {account_name}"
             choice = QMessageBox.question(self, 'Remove?', msg, QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
@@ -475,14 +476,16 @@ class Window(QMainWindow):
             self.handle_search()
 
     def color_row(self):
-        row_name = self.ui.tableWidget.selectedItems()[0].text()
-        curr_color = get_color_object(self.pm, row_name)
-        color_dialog = QColorDialog.getColor(curr_color) if curr_color else QColorDialog.getColor()
-        if color_dialog.isValid():
-            rgba = color_dialog.getRgb()
-            color = ','.join(str(x) for x in rgba)
-            self.pm.color_row(row_name, color)
-            self.setup_table()
+        selected = self.ui.tableWidget.selectedItems()
+        if selected:
+            row_name = selected[0].text()
+            curr_color = get_color_object(self.pm, row_name)
+            color_dialog = QColorDialog.getColor(curr_color) if curr_color else QColorDialog.getColor()
+            if color_dialog.isValid():
+                rgba = color_dialog.getRgb()
+                color = ','.join(str(x) for x in rgba)
+                self.pm.color_row(row_name, color)
+                self.setup_table()
 
 
 def get_color_object(pm, name):
