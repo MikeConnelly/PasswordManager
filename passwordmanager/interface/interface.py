@@ -28,17 +28,23 @@ class Interface:
         while True:
             print('1: retrieve table')
             print('2: add an entry')
-            print('3: remove an entry')
-            print('4: change an entry')
+            print('3: change an entry')
+            print('4: remove an entry')
             print('5: add a field')
-            print('6: logout')
+            print('6: rename a field')
+            print('7: remove a field')
+            print('8: logout')
+            print('9: reset')
             commands = {
                 '1': self.retrieve_table_cmd,
                 '2': self.add_user_entry_cmd,
-                '3': self.remove_entry_cmd,
-                '4': self.change_entry_cmd,
+                '3': self.change_entry_cmd,
+                '4': self.remove_entry_cmd,
                 '5': self.add_column_cmd,
-                '6': self.logout_cmd
+                '6': self.rename_column_cmd,
+                '7': self.remove_column_cmd,
+                '8': self.logout_cmd,
+                '9': self.reset_cmd
             }
             try:
                 commands[input()]()
@@ -95,12 +101,8 @@ class Interface:
     def add_user_entry_cmd(self):
         """CLI to add an account for the current user"""
         print('---add an entry or type "exit"---')
-        if self.pm.user.custom_cols:
-            custom_cols = self.pm.user.custom_cols.split(',')
-            expansion = {}
-        else:
-            custom_cols = []
-            expansion = None
+        custom_cols = self.pm.get_custom_columns()
+        expansion = {}
 
         try:
             print('Account: ')
@@ -132,12 +134,10 @@ class Interface:
         """
         table = self.pm.retrieve_table()
         selection = None
-        index = 1
         account_map = {}
-        for account in table:
+        for index, account in enumerate(table, start=1):
             account_map[index] = account
             print(str(index) + ': ' + account['name'])
-            index += 1
 
         while not selection:
             print(f"Enter the index of the account you want to {mode} or \"exit\"")
@@ -151,7 +151,6 @@ class Interface:
     def remove_entry_cmd(self):
         """user selects an account to remove"""
         print('---remove an entry---')
-
         try:
             selection = self.select_user_account_cmd('remove')
             confirmation = ''
@@ -174,16 +173,12 @@ class Interface:
         except ExitError:
             return
 
-        custom_fields = self.pm.user.custom_cols.split(',') if self.pm.user.custom_cols else []
-        all_fields = ['name', 'password', 'email', 'url']
-        all_fields.extend(custom_fields)
-        index = 1
+        all_fields = self.pm.get_all_columns()
         cols = {}
-        for field in all_fields:
+        for index, field in enumerate(all_fields, start=1):
             value = selection[field] if field in selection else ''
             print(f"{index}. {field}: {value}")
             cols[str(index)] = field
-            index += 1
 
         col_selection = None
         while not col_selection:
@@ -195,10 +190,8 @@ class Interface:
                 print('---invalid input---')
             except ExitError:
                 return
-
         print('enter new field')
         new_field = input()
-
         self.pm.change_entry(selection, col_selection, new_field)
         print('---account successfully updated---')
 
@@ -213,10 +206,55 @@ class Interface:
         except ExitError:
             return
 
+    def select_custom_column_cmd(self, mode='rename or remove'):
+        """select column from custom columns"""
+        print('---enter the index of the column you wish to rename---')
+        custom_columns = self.pm.get_custom_columns()
+        selection = None
+        column_map = {}
+        for index, col in enumerate(custom_columns, start=1):
+            column_map[index] = col
+            print(str(index) + ': ' + col)
+        while not selection:
+            print(f"Enter the index of the column you want to {mode} or \"exit\"")
+            try:
+                selection = column_map[int(get_input_or_exit())]
+            except (KeyError, ValueError):
+                print('---invalid input---')
+        return selection
+
+    def rename_column_cmd(self):
+        """CLI to rename a custom column in the user's account table"""
+        try:
+            name = self.select_custom_column_cmd(mode='rename')
+        except ExitError:
+            return
+        print('Enter new column name:')
+        new_name = input()
+        self.pm.rename_column(selection, new_name)
+
+    def remove_column_cmd(self):
+        """CLI to remove a custom column from the user's account table"""
+        try:
+            name = self.select_custom_column_cmd(mode='remove')
+            confirmation = ''
+            while confirmation not in ('y', 'Y'):
+                print(f"are you sure you want to remove column {name}? (y/n):")
+                confirmation = input()
+                if confirmation in ('n', 'N'):
+                    return
+            self.pm.remove_column(name)
+        except ExitError:
+            return
+        print(f"{name} successfully removed")
+
     def logout_cmd(self):
         """logout and exit"""
         self.pm.logout()
         exit(0)
+
+    def reset_cmd(self):
+        pass
 
 
 def run(pm):
