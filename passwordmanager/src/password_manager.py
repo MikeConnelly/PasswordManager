@@ -241,7 +241,7 @@ class PasswordManager:
 
 
 def generate_password(pass_len):
-    """generate random password of length pass_len"""
+    """generate random password"""
     chars = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?"
     password = ''.join(random.sample(chars, pass_len))
     return password

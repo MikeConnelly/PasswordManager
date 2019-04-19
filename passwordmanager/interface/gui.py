@@ -143,22 +143,25 @@ class AddRowDialog(QDialog):
             | QtCore.Qt.WindowTitleHint
         )
 
-        layout = QGridLayout(self)
+        grid_layout = QGridLayout()
         for i in range(len(self.cols)):
-            layout.addWidget(self.labels[i], i, 0)
-            layout.addWidget(self.fields[i], i, 1)
+            grid_layout.addWidget(self.labels[i], i, 0)
+            grid_layout.addWidget(self.fields[i], i, 1)
             if self.cols[i] == 'password':
-                layout.addWidget(self.generate_password_button, i, 2)
-        layout.addWidget(self.add_button, i+1, 0)
-        layout.addWidget(self.cancel_button, i+1, 1)
-        layout.addWidget(self.error_message, i+2, 0, 1, 2)
+                grid_layout.addWidget(self.generate_password_button, i, 2)
+
+        horizontal_layout = QHBoxLayout()
+        horizontal_layout.addWidget(self.add_button)
+        horizontal_layout.addWidget(self.cancel_button)
+
+        vertical_layout = QVBoxLayout(self)
+        vertical_layout.addLayout(grid_layout)
+        vertical_layout.addLayout(horizontal_layout)
+        vertical_layout.addWidget(self.error_message)
 
     def handle_add(self):
-        custom_cols = {}
         if len(self.cols) > 4:
-            for index, col in enumerate(self.cols[4:], 4):
-                print(f"{index}, {col}")
-                custom_cols[col] = self.fields[index].text()
+            custom = {col: self.fields[index].text() for index, col in enumerate(self.cols[4:], 4)}
         try:
             if self.fields[0].text() and self.fields[1].text() and self.fields[2].text():
                 self.pm.add_user_entry(
@@ -166,7 +169,7 @@ class AddRowDialog(QDialog):
                     self.fields[1].text(),
                     self.fields[2].text(),
                     self.fields[3].text(),
-                    custom_cols
+                    custom
                 )
                 self.accept()
             else:
@@ -360,9 +363,9 @@ class Window(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.pm = pm
+        self.filter_field = 'name'
         self.setup_table()
         self.setup_tools()
-        self.filter_field = 'name'
 
     def setup_table(self, results=None):
         self.ui.tableWidget.clearContents()
@@ -395,7 +398,17 @@ class Window(QMainWindow):
         self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
         self.ui.reset_button.clicked.connect(self.handle_reset)
         self.ui.search_bar.textEdited.connect(self.handle_search)
-        self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
+        filter_menu = QMenu()
+        for col in self.pm.get_all_columns():
+            action = QAction(col, self)
+            action.setCheckable(True)
+            action.triggered.connect(lambda: self.handle_filter_search(col))
+            if col == self.filter_field:
+                action.setChecked(True)
+            filter_menu.addAction(action)
+        self.ui.filter_search_button.setMenu(filter_menu)
+        # make a class for the menu, pass in the column list
+        # self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
 
         modify_action = QAction('modify account', self)
         modify_action.triggered.connect(self.handle_modify)
@@ -406,7 +419,24 @@ class Window(QMainWindow):
         self.ui.tableWidget.addAction(modify_action)
         self.ui.tableWidget.addAction(remove_action)
         self.ui.tableWidget.addAction(color_action)
-        self.ui.tableWidget.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        self.ui.tableWidget.itemSelectionChanged.connect(self.set_button_state)
+        self.set_button_state()
+
+    def set_button_state(self):
+        if self.ui.tableWidget.selectedItems():
+            self.ui.modify_account_button.setEnabled(True)
+            self.ui.remove_account_button.setEnabled(True)
+            self.ui.tableWidget.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        else:
+            self.ui.modify_account_button.setEnabled(False)
+            self.ui.remove_account_button.setEnabled(False)
+            self.ui.tableWidget.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        if self.pm.get_custom_columns():
+            self.ui.rename_column_button.setEnabled(True)
+            self.ui.remove_column_button.setEnabled(True)
+        else:
+            self.ui.rename_column_button.setEnabled(False)
+            self.ui.remove_column_button.setEnabled(False)
 
     def handle_add_account(self):
         add_dialog = AddRowDialog(self.pm)
@@ -440,10 +470,17 @@ class Window(QMainWindow):
         except UserError:
             pass
 
+    def handle_rename_column(self):
+        rename_column_dialog = RenameColumnDialog(self.pm)
+        if rename_column_dialog.exec_() == QDialog.Accepted:
+            self.setup_table()
+            self.set_button_state()
+
     def handle_remove_column(self):
         remove_column_dialog = RemoveColumnDialog(self.pm)
         if remove_column_dialog.exec_() == QDialog.Accepted:
             self.setup_table()
+            self.set_button_state()
 
     def handle_reset(self):
         quit_msg = 'Are you sure you want to reset your table?'
@@ -451,11 +488,6 @@ class Window(QMainWindow):
                 .question(self, 'Reset Table', quit_msg, QMessageBox.Yes | QMessageBox.No)
         if confirm == QMessageBox.Yes:
             self.pm.reset_all()
-            self.setup_table()
-
-    def handle_rename_column(self):
-        rename_column_dialog = RenameColumnDialog(self.pm)
-        if rename_column_dialog.exec_() == QDialog.Accepted:
             self.setup_table()
 
     def handle_search(self):
@@ -469,11 +501,12 @@ class Window(QMainWindow):
         else:
             self.setup_table()
 
-    def handle_filter_search(self):
-        filter_search_dialog = FilterSearchDialog(self.pm)
-        if filter_search_dialog.exec_() == QDialog.Accepted:
-            self.filter_field = filter_search_dialog.filter_term
-            self.handle_search()
+    def handle_filter_search(self, field):
+        self.filter_field = field
+        # filter_search_dialog = FilterSearchDialog(self.pm)
+        # if filter_search_dialog.exec_() == QDialog.Accepted:
+        #     self.filter_field = filter_search_dialog.filter_term
+        #     self.handle_search()
 
     def color_row(self):
         selected = self.ui.tableWidget.selectedItems()
