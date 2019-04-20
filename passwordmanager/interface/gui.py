@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
     QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
-    QMenu, QAction, QColorDialog, QStatusBar
+    QMenu, QAction, QColorDialog, QStatusBar, QActionGroup
 )
 from passwordmanager.src.password_manager import generate_password, UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -329,30 +329,28 @@ class RenameColumnDialog(QDialog):
         self.accept()
 
 
-class FilterSearchDialog(QDialog):
-    def __init__(self, pm, parent=None):
-        super(FilterSearchDialog, self).__init__(parent)
-        self.pm = pm
-        self.filter_label = QLabel('column to filter by:', self)
-        self.combo = QComboBox(self)
-        self.combo.addItems(self.pm.get_all_columns())
-        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Close, self)
-        self.buttons.accepted.connect(self.handle_filter)
-        self.buttons.rejected.connect(self.close)
-        self.setWindowTitle('Filter Search')
-        self.setWindowFlags(
-            QtCore.Qt.WindowCloseButtonHint
-            | QtCore.Qt.WindowSystemMenuHint
-            | QtCore.Qt.WindowTitleHint
-        )
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.filter_label)
-        layout.addWidget(self.combo)
-        layout.addWidget(self.buttons)
+class FilterMenu(QMenu):
+    def __init__(self, cols, default, parent=None):
+        super(FilterMenu, self).__init__(parent)
+        self.ag = QActionGroup(self, exclusive=True)
+        self.setup_menu(cols)
+        self.set_default(default)
 
-    def handle_filter(self):
-        self.filter_term = self.combo.currentText()
-        self.accept()
+    def setup_menu(self, cols):
+        for col in cols:
+            action = self.ag.addAction(QAction(col, self))
+            action.setCheckable(True)
+            self.addAction(action)
+
+    def set_default(self, default):
+        for action in self.actions():
+            if action.text() == default:
+                action.toggle()
+
+    def get_checked(self):
+        for action in self.actions():
+            if action.isChecked():
+                return action.text()
 
 
 class Window(QMainWindow):
@@ -363,7 +361,6 @@ class Window(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.pm = pm
-        self.filter_field = 'name'
         self.setup_table()
         self.setup_tools()
 
@@ -398,17 +395,8 @@ class Window(QMainWindow):
         self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
         self.ui.reset_button.clicked.connect(self.handle_reset)
         self.ui.search_bar.textEdited.connect(self.handle_search)
-        filter_menu = QMenu()
-        for col in self.pm.get_all_columns():
-            action = QAction(col, self)
-            action.setCheckable(True)
-            action.triggered.connect(lambda: self.handle_filter_search(col))
-            if col == self.filter_field:
-                action.setChecked(True)
-            filter_menu.addAction(action)
-        self.ui.filter_search_button.setMenu(filter_menu)
-        # make a class for the menu, pass in the column list
-        # self.ui.filter_search_button.clicked.connect(self.handle_filter_search)
+        self.filter_menu = FilterMenu(self.pm.get_all_columns(), 'name')
+        self.ui.filter_search_button.setMenu(self.filter_menu)
 
         modify_action = QAction('modify account', self)
         modify_action.triggered.connect(self.handle_modify)
@@ -492,21 +480,15 @@ class Window(QMainWindow):
 
     def handle_search(self):
         query = self.ui.search_bar.text()
+        filter_field = self.filter_menu.get_checked()
         if query:
             results = []
             for account in self.pm.retrieve_table():
-                if self.filter_field in account and query in account[self.filter_field]:
+                if filter_field in account and query in account[filter_field]:
                     results.append(account)
             self.setup_table(results)
         else:
             self.setup_table()
-
-    def handle_filter_search(self, field):
-        self.filter_field = field
-        # filter_search_dialog = FilterSearchDialog(self.pm)
-        # if filter_search_dialog.exec_() == QDialog.Accepted:
-        #     self.filter_field = filter_search_dialog.filter_term
-        #     self.handle_search()
 
     def color_row(self):
         selected = self.ui.tableWidget.selectedItems()
