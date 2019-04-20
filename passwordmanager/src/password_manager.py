@@ -64,14 +64,16 @@ class PasswordManager:
         self.create_user(username, masterpass)
         self.login(username, masterpass)
 
-    def retrieve_table(self):
+    def retrieve_table(self, decrypt=True):
         """Prints the table of accounts for the current user"""
         table = []
         for account in self.user.accounts:
+            email = self.crypto.decrypt(account.email) if decrypt else account.email
+            password = self.crypto.decrypt(account.password) if decrypt else account.password
             entry = {
                 'name': account.name,
-                'email': self.crypto.decrypt(account.email),
-                'password': self.crypto.decrypt(account.password),
+                'email': email,
+                'password': password,
                 'url': account.url
             }
             if account.expansion:
@@ -238,6 +240,13 @@ class PasswordManager:
                 .one()
         extras = json.loads(account.extras) if account.extras else {}
         return extras['color'] if 'color' in extras else None
+
+    def export_to_csv(self, path, decrypt=False):
+        table = self.retrieve_table(decrypt)
+        with open(path, 'w') as f:
+            for account in table:
+                for key, value in account.items():
+                    f.write(f"{key},{value}\n")
 
 
 def generate_password(pass_len):

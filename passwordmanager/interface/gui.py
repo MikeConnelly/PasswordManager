@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
     QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
-    QMenu, QAction, QColorDialog, QStatusBar, QActionGroup
+    QMenu, QAction, QColorDialog, QActionGroup, QFileDialog
 )
 from passwordmanager.src.password_manager import generate_password, UserError, AccountError
 from passwordmanager.interface.mainwindow import *
@@ -397,6 +397,7 @@ class Window(QMainWindow):
         self.ui.search_bar.textEdited.connect(self.handle_search)
         self.filter_menu = FilterMenu(self.pm.get_all_columns(), 'name')
         self.ui.filter_search_button.setMenu(self.filter_menu)
+        self.ui.export_button.clicked.connect(self.handle_export)
 
         modify_action = QAction('modify account', self)
         modify_action.triggered.connect(self.handle_modify)
@@ -501,6 +502,11 @@ class Window(QMainWindow):
                 color = ','.join(str(x) for x in rgba)
                 self.pm.color_row(row_name, color)
                 self.setup_table()
+
+    def handle_export(self):
+        path, _ = QFileDialog.getSaveFileName(self, 'Save file', 'c://', "CSV Files (*.csv)")
+        if path:
+            self.pm.export_to_csv(path)
 
 
 def get_color_object(pm, name):
