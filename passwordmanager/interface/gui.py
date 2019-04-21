@@ -1,12 +1,13 @@
 import sys
-import os
+from PyQt5 import QtCore
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox, QLabel,
-    QDialog, QComboBox, QGridLayout, QDialogButtonBox, QInputDialog, QVBoxLayout, QHBoxLayout,
-    QMenu, QAction, QColorDialog, QActionGroup, QFileDialog
+    QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QLineEdit, QPushButton,
+    QLabel, QMessageBox, QDialog, QDialogButtonBox, QComboBox, QGridLayout, QVBoxLayout,
+    QHBoxLayout, QInputDialog, QMenu, QAction, QActionGroup, QColorDialog, QFileDialog, QStatusBar,
+    QAbstractScrollArea, QAbstractItemView
 )
 from passwordmanager.src.password_manager import generate_password, UserError, AccountError
-from passwordmanager.interface.mainwindow import *
 
 
 class CreateAccount(QDialog):
@@ -353,6 +354,128 @@ class FilterMenu(QMenu):
                 return action.text()
 
 
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        self.centralWidget = QWidget(MainWindow)
+        self.centralWidget.setObjectName("centralWidget")
+        vertical_layout = QVBoxLayout(self.centralWidget)
+        horizontal_layout = QHBoxLayout()
+        self.tableWidget = QTableWidget(self.centralWidget)
+        self.tableWidget.setEnabled(True)
+        self.tableWidget.setAutoScroll(True)
+        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableWidget.setAlternatingRowColors(True)
+        self.tableWidget.setShowGrid(True)
+        self.tableWidget.setGridStyle(QtCore.Qt.SolidLine)
+        self.tableWidget.setObjectName("tableWidget")
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setRowCount(0)
+        item = QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(0, item)
+        item = QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(1, item)
+        item = QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(2, item)
+        item = QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(3, item)
+        self.tableWidget.horizontalHeader().setDefaultSectionSize(100)
+        self.tableWidget.horizontalHeader().setMinimumSectionSize(100)
+        self.tableWidget.verticalHeader().setCascadingSectionResizes(False)
+        self.tableWidget.verticalHeader().setDefaultSectionSize(50)
+        self.tableWidget.verticalHeader().setMinimumSectionSize(50)
+        self.tableWidget.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.search_bar = QLineEdit(self.centralWidget)
+        self.search_bar.setObjectName("search_bar")
+        self.search_bar.setMinimumSize(60, 40)
+        self.add_account_button = QPushButton(self.centralWidget)
+        self.add_account_button.setObjectName("add_account_button")
+        self.add_account_button.setMinimumSize(40, 40)
+        self.add_account_button.setMaximumSize(40, 40)
+        self.add_account_button.setToolTip('add an account')
+        self.modify_account_button = QPushButton(self.centralWidget)
+        self.modify_account_button.setObjectName("modify_account_button")
+        self.modify_account_button.setMinimumSize(40, 40)
+        self.modify_account_button.setMaximumSize(40, 40)
+        self.modify_account_button.setToolTip('modify an account')
+        self.remove_account_button = QPushButton(self.centralWidget)
+        self.remove_account_button.setObjectName("remove_account_button")
+        self.remove_account_button.setMinimumSize(40, 40)
+        self.remove_account_button.setMaximumSize(40, 40)
+        self.remove_account_button.setToolTip('remove an account')
+        self.add_column_button = QPushButton(self.centralWidget)
+        self.add_column_button.setObjectName("add_column_button")
+        self.add_column_button.setMinimumSize(40, 40)
+        self.add_column_button.setMaximumSize(40, 40)
+        self.add_column_button.setToolTip('add a column')
+        self.remove_column_button = QPushButton(self.centralWidget)
+        self.remove_column_button.setObjectName("remove_column_button")
+        self.remove_column_button.setMinimumSize(40, 40)
+        self.remove_column_button.setMaximumSize(40, 40)
+        self.remove_column_button.setToolTip('remove a column')
+        self.reset_button = QPushButton(self.centralWidget)
+        self.reset_button.setObjectName("reset_button")
+        self.reset_button.setMinimumSize(40, 40)
+        self.reset_button.setMaximumSize(40, 40)
+        self.reset_button.setToolTip('reset table')
+        self.rename_column_button = QPushButton(self.centralWidget)
+        self.rename_column_button.setObjectName("rename_column_button")
+        self.rename_column_button.setMinimumSize(40, 40)
+        self.rename_column_button.setMaximumSize(40, 40)
+        self.rename_column_button.setToolTip('rename a column')
+        self.filter_search_button =QPushButton(self.centralWidget)
+        self.filter_search_button.setObjectName("filter_search_button")
+        self.filter_search_button.setMinimumSize(40, 40)
+        self.filter_search_button.setMaximumSize(40, 40)
+        self.filter_search_button.setToolTip('filter search')
+        self.settings_button = QPushButton(self.centralWidget)
+        self.settings_button.setObjectName("settings_button")
+        self.settings_button.setMinimumSize(40, 40)
+        self.settings_button.setMaximumSize(40, 40)
+        self.settings_button.setToolTip('settings_button')
+        MainWindow.setCentralWidget(self.centralWidget)
+        self.statusBar = QStatusBar(MainWindow)
+        self.statusBar.setObjectName("statusBar")
+        MainWindow.setStatusBar(self.statusBar)
+
+        horizontal_layout.addWidget(self.add_account_button)
+        horizontal_layout.addWidget(self.modify_account_button)
+        horizontal_layout.addWidget(self.remove_account_button)
+        horizontal_layout.addWidget(self.add_column_button)
+        horizontal_layout.addWidget(self.rename_column_button)
+        horizontal_layout.addWidget(self.remove_column_button)
+        horizontal_layout.addWidget(self.reset_button)
+        horizontal_layout.addWidget(self.search_bar)
+        horizontal_layout.addWidget(self.filter_search_button)
+        horizontal_layout.addWidget(self.settings_button)
+        vertical_layout.addLayout(horizontal_layout)
+        vertical_layout.addWidget(self.tableWidget)
+        self.retranslateUi(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "Password Manager"))
+        item = self.tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("MainWindow", "Account"))
+        item = self.tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("MainWindow", "Email"))
+        item = self.tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("MainWindow", "Password"))
+        item = self.tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("MainWindow", "URL"))
+        self.search_bar.setPlaceholderText(_translate("MainWindow", "Search"))
+        self.modify_account_button.setText(_translate("MainWindow", "/A"))
+        self.remove_account_button.setText(_translate("MainWindow", "-A"))
+        self.add_account_button.setText(_translate("MainWindow", "+A"))
+        self.add_column_button.setText(_translate("MainWindow", "+C"))
+        self.remove_column_button.setText(_translate("MainWindow", "-C"))
+        self.reset_button.setText(_translate("MainWindow", "R"))
+        self.rename_column_button.setText(_translate("MainWindow", "/C"))
+        self.filter_search_button.setText(_translate("MainWindow", "F"))
+        self.settings_button.setText(_translate("MainWindow", "S"))
+
+
 class Window(QMainWindow):
     """Main GUI window"""
 
@@ -397,7 +520,14 @@ class Window(QMainWindow):
         self.ui.search_bar.textEdited.connect(self.handle_search)
         self.filter_menu = FilterMenu(self.pm.get_all_columns(), 'name')
         self.ui.filter_search_button.setMenu(self.filter_menu)
-        self.ui.export_button.clicked.connect(self.handle_export)
+        settings_menu = QMenu()
+        eexport = QAction('export encrypted', self)
+        dexport = QAction('export decrypted', self)
+        eexport.triggered.connect(lambda: self.handle_export(False))
+        dexport.triggered.connect(lambda: self.handle_export(True))
+        settings_menu.addAction(eexport)
+        settings_menu.addAction(dexport)
+        self.ui.settings_button.setMenu(settings_menu)
 
         modify_action = QAction('modify account', self)
         modify_action.triggered.connect(self.handle_modify)
@@ -503,10 +633,10 @@ class Window(QMainWindow):
                 self.pm.color_row(row_name, color)
                 self.setup_table()
 
-    def handle_export(self):
-        path, _ = QFileDialog.getSaveFileName(self, 'Save file', 'c://', "CSV Files (*.csv)")
+    def handle_export(self, decrypt=False):
+        path, _ = QFileDialog.getSaveFileName(self, 'Save file', 'c://accounts', "CSV Files (*.csv)")
         if path:
-            self.pm.export_to_csv(path)
+            self.pm.export_to_csv(path, decrypt)
 
 
 def get_color_object(pm, name):
@@ -514,7 +644,7 @@ def get_color_object(pm, name):
     rgba = None
     if color:
         rgba = [int(x) for x in color.split(',')]
-    return QtGui.QColor(*rgba) if rgba else None
+    return QColor(*rgba) if rgba else None
 
 
 def run(args, pm):
