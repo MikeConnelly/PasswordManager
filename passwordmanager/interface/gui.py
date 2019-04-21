@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QLineEdit, QPushButton,
     QLabel, QMessageBox, QDialog, QDialogButtonBox, QComboBox, QGridLayout, QVBoxLayout,
     QHBoxLayout, QInputDialog, QMenu, QAction, QActionGroup, QColorDialog, QFileDialog, QStatusBar,
-    QAbstractScrollArea, QAbstractItemView
+    QAbstractScrollArea, QAbstractItemView, QStyledItemDelegate, QStyleOptionViewItem, QStyle
 )
 import qdarkstyle
 from passwordmanager.src.password_manager import generate_password, UserError, AccountError
@@ -355,7 +355,24 @@ class FilterMenu(QMenu):
                 return action.text()
 
 
-class Ui_MainWindow(object):
+class RowHoverDelegate(QStyledItemDelegate):
+    def __init__(self, table, parent=None):
+        super(RowHoverDelegate, self).__init__(parent)
+        self.table = table
+        self.table.itemEntered.connect(lambda item: self.onItemEntered(item))
+        self.hovered_row = None
+
+    def onItemEntered(self, item):
+        self.hovered_row = item.row()
+        self.table.viewport().update()
+
+    def paint(self, painter, opt, index):
+        if index.row() == self.hovered_row and index.row() != self.table.currentRow():
+            opt.state = QStyle.State_Active
+        QStyledItemDelegate.paint(self, painter, opt, index)
+
+
+class Ui_MainWindow:
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         self.centralWidget = QWidget(MainWindow)
@@ -370,6 +387,7 @@ class Ui_MainWindow(object):
         self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.setShowGrid(True)
         self.tableWidget.setGridStyle(QtCore.Qt.SolidLine)
+        self.tableWidget.setMouseTracking(True)
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setRowCount(0)
@@ -434,6 +452,8 @@ class Ui_MainWindow(object):
         self.statusBar = QStatusBar(MainWindow)
         self.statusBar.setObjectName("statusBar")
         MainWindow.setStatusBar(self.statusBar)
+        delegate = RowHoverDelegate(self.tableWidget)
+        self.tableWidget.setItemDelegate(delegate)
 
         horizontal_layout.addWidget(self.add_account_button)
         horizontal_layout.addWidget(self.modify_account_button)
@@ -634,7 +654,7 @@ class Window(QMainWindow):
                 self.setup_table()
 
     def handle_export(self, decrypt=False):
-        path, _ = QFileDialog.getSaveFileName(self, 'Save file', 'c://accounts', "CSV Files (*.csv)")
+        path, _ = QFileDialog.getSaveFileName(self, 'Save file', 'c://accounts', 'CSV Files (*.csv)')
         if path:
             self.pm.export_to_csv(path, decrypt)
 
@@ -657,7 +677,6 @@ def get_color_object(pm, name):
 
 def run(args, pm):
     app = QApplication(args)
-    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     login = Login(pm)
 
     if login.exec_() == QDialog.Accepted:
