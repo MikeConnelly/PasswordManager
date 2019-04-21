@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout, QInputDialog, QMenu, QAction, QActionGroup, QColorDialog, QFileDialog, QStatusBar,
     QAbstractScrollArea, QAbstractItemView
 )
+import qdarkstyle
 from passwordmanager.src.password_manager import generate_password, UserError, AccountError
 
 
@@ -414,11 +415,6 @@ class Ui_MainWindow(object):
         self.remove_column_button.setMinimumSize(40, 40)
         self.remove_column_button.setMaximumSize(40, 40)
         self.remove_column_button.setToolTip('remove a column')
-        self.reset_button = QPushButton(self.centralWidget)
-        self.reset_button.setObjectName("reset_button")
-        self.reset_button.setMinimumSize(40, 40)
-        self.reset_button.setMaximumSize(40, 40)
-        self.reset_button.setToolTip('reset table')
         self.rename_column_button = QPushButton(self.centralWidget)
         self.rename_column_button.setObjectName("rename_column_button")
         self.rename_column_button.setMinimumSize(40, 40)
@@ -445,7 +441,6 @@ class Ui_MainWindow(object):
         horizontal_layout.addWidget(self.add_column_button)
         horizontal_layout.addWidget(self.rename_column_button)
         horizontal_layout.addWidget(self.remove_column_button)
-        horizontal_layout.addWidget(self.reset_button)
         horizontal_layout.addWidget(self.search_bar)
         horizontal_layout.addWidget(self.filter_search_button)
         horizontal_layout.addWidget(self.settings_button)
@@ -470,7 +465,6 @@ class Ui_MainWindow(object):
         self.add_account_button.setText(_translate("MainWindow", "+A"))
         self.add_column_button.setText(_translate("MainWindow", "+C"))
         self.remove_column_button.setText(_translate("MainWindow", "-C"))
-        self.reset_button.setText(_translate("MainWindow", "R"))
         self.rename_column_button.setText(_translate("MainWindow", "/C"))
         self.filter_search_button.setText(_translate("MainWindow", "F"))
         self.settings_button.setText(_translate("MainWindow", "S"))
@@ -484,6 +478,7 @@ class Window(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.pm = pm
+        self.light_theme = True
         self.setup_table()
         self.setup_tools()
 
@@ -516,17 +511,22 @@ class Window(QMainWindow):
         self.ui.add_column_button.clicked.connect(self.handle_add_column)
         self.ui.rename_column_button.clicked.connect(self.handle_rename_column)
         self.ui.remove_column_button.clicked.connect(self.handle_remove_column)
-        self.ui.reset_button.clicked.connect(self.handle_reset)
         self.ui.search_bar.textEdited.connect(self.handle_search)
         self.filter_menu = FilterMenu(self.pm.get_all_columns(), 'name')
         self.ui.filter_search_button.setMenu(self.filter_menu)
         settings_menu = QMenu()
         eexport = QAction('export encrypted', self)
         dexport = QAction('export decrypted', self)
+        reset = QAction('reset table', self)
+        theme = QAction('dark/light theme', self)
         eexport.triggered.connect(lambda: self.handle_export(False))
         dexport.triggered.connect(lambda: self.handle_export(True))
+        reset.triggered.connect(self.handle_reset)
+        theme.triggered.connect(self.change_theme)
         settings_menu.addAction(eexport)
         settings_menu.addAction(dexport)
+        settings_menu.addAction(reset)
+        settings_menu.addAction(theme)
         self.ui.settings_button.setMenu(settings_menu)
 
         modify_action = QAction('modify account', self)
@@ -638,6 +638,14 @@ class Window(QMainWindow):
         if path:
             self.pm.export_to_csv(path, decrypt)
 
+    def change_theme(self):
+        if self.light_theme:
+            self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+            self.light_theme = False
+        else:
+            self.setStyleSheet(None)
+            self.light_theme = True
+
 
 def get_color_object(pm, name):
     color = pm.get_row_color(name)
@@ -649,6 +657,7 @@ def get_color_object(pm, name):
 
 def run(args, pm):
     app = QApplication(args)
+    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     login = Login(pm)
 
     if login.exec_() == QDialog.Accepted:

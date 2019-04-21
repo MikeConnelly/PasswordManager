@@ -3,7 +3,7 @@ import os
 import shutil
 import json
 from passwordmanager.src import password_manager
-from passwordmanager.interface import interface, gui
+from passwordmanager.interface import cli, gui
 
 
 def get_paths(path_file):
@@ -79,7 +79,7 @@ def main(args):
 
     if arg == 'cli':
         pm = password_manager.PasswordManager(paths)
-        interface.run(pm)
+        cli.run(pm)
     elif arg == 'gui':
         pm = password_manager.PasswordManager(paths)
         gui.run(args, pm)
