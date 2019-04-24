@@ -164,6 +164,8 @@ class AddRowDialog(QDialog):
     def handle_add(self):
         if len(self.cols) > 4:
             custom = {col: self.fields[index].text() for index, col in enumerate(self.cols[4:], 4)}
+        else:
+            custom = None
         try:
             if self.fields[0].text() and self.fields[1].text() and self.fields[2].text():
                 self.pm.add_user_entry(
@@ -384,6 +386,7 @@ class Ui_MainWindow:
         self.tableWidget.setAutoScroll(True)
         self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableWidget.setFocusPolicy(QtCore.Qt.NoFocus)
         self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.setShowGrid(True)
         self.tableWidget.setGridStyle(QtCore.Qt.SolidLine)
@@ -501,6 +504,7 @@ class Window(QMainWindow):
         self.light_theme = True
         self.setup_table()
         self.setup_tools()
+        self.ui.tableWidget.setCurrentItem(None)
 
     def setup_table(self, results=None):
         self.ui.tableWidget.clearContents()

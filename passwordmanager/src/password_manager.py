@@ -3,7 +3,7 @@ import json
 import random
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .crypto import Crypto
+from .crypto import Cipher, get_encrypted_password, compare_passwords
 from .models import Base, Account, User
 
 
@@ -15,7 +15,7 @@ class PasswordManager:
     def __init__(self, paths):
         self.user = None
         self.sqlite_file = paths['database_path']
-        self.crypto = Crypto(paths['key_path'])
+        self.crypto = None
 
         if not os.path.isfile(self.sqlite_file):
             engine = create_engine('sqlite://' + self.sqlite_file)
@@ -32,16 +32,12 @@ class PasswordManager:
 
         # check if user already exists, throws error if multiple results
         user_list = self.session.query(User).filter(User.username == username).one_or_none()
-
         if user_list is not None:
             raise UserError('user already exists')
         else:
-            hashed_masterpass = self.crypto.encrypt(masterpass)
-
             user = User()
             user.username = username
-            user.master_password = hashed_masterpass
-
+            user.master_password = get_encrypted_password(masterpass)
             self.session.add(user)
             self.session.commit()
 
@@ -50,13 +46,12 @@ class PasswordManager:
         user = self.session.query(User).filter(User.username == username).one_or_none()
         if user is None:
             raise UserError('user does not exist')
-
         hashed_pass = user.master_password
-        masterpass = self.crypto.decrypt(hashed_pass)
-
-        if masterpass != password:
+        success, key = compare_passwords(password, hashed_pass)
+        if not success:
             raise UserError('incorrect password')
         self.user = user
+        self.crypto = Cipher(key)
         return True
 
     def create_user_and_login(self, username, masterpass):
