@@ -1,16 +1,15 @@
 import base64
 import os
-from cryptography.fernet import Fernet, InvalidToken, InvalidSignature
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.exceptions import InvalidKey
 
 
 class Cipher:
 
     def __init__(self, key):
-        self.cipher_suite = Fernet(key)
+        self.cipher_suite = Fernet(base64.urlsafe_b64encode(key))
 
     def encrypt(self, field):
         """encrypt account field"""
@@ -33,28 +32,27 @@ def create_new_key(password, salt=None):
         iterations=100000,
         backend=default_backend()
     )
-    key = base64.urlsafe_b64encode(kdf.derive(str.encode(password)))
+    key = kdf.derive(str.encode(password))
     return (key, salt)
 
 def get_encrypted_password(password):
     """create a password suitable to store"""
     key, salt = create_new_key(password)
-    fernet = Fernet(key)
+    fernet = Fernet(base64.urlsafe_b64encode(key))
     ciphertext = fernet.encrypt(str.encode(password))
-    ciphertext_with_salt = ciphertext + salt
+    ciphertext_with_salt = ciphertext + base64.urlsafe_b64encode(salt)
     return ciphertext_with_salt
 
 def compare_passwords(password, stored_password):
     """compares a plaintext password with the stored, encrypted password"""
     ciphertext = stored_password[:-16]
-    salt = stored_password[-16:]
-    key, _ = create_new_key(password, salt)
-    fernet = Fernet(key)
+    salt = stored_password[-24:]
+    key, _ = create_new_key(password, base64.urlsafe_b64decode(salt))
+    fernet = Fernet(base64.urlsafe_b64encode(key))
     try:
-        # kdf verify not working
         plaintext = fernet.decrypt(ciphertext).decode('utf-8')
         if plaintext == password:
-            return (True, key)
-    except InvalidKey:
+            return (True, Cipher(key))
+    except InvalidToken:
         pass
     return (False, None)

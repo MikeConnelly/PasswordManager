@@ -483,12 +483,12 @@ class Ui_MainWindow:
         item = self.tableWidget.horizontalHeaderItem(3)
         item.setText(_translate("MainWindow", "URL"))
         self.search_bar.setPlaceholderText(_translate("MainWindow", "Search"))
+        self.add_account_button.setText(_translate("MainWindow", "+A"))
         self.modify_account_button.setText(_translate("MainWindow", "/A"))
         self.remove_account_button.setText(_translate("MainWindow", "-A"))
-        self.add_account_button.setText(_translate("MainWindow", "+A"))
         self.add_column_button.setText(_translate("MainWindow", "+C"))
-        self.remove_column_button.setText(_translate("MainWindow", "-C"))
         self.rename_column_button.setText(_translate("MainWindow", "/C"))
+        self.remove_column_button.setText(_translate("MainWindow", "-C"))
         self.filter_search_button.setText(_translate("MainWindow", "F"))
         self.settings_button.setText(_translate("MainWindow", "S"))
 
@@ -626,7 +626,7 @@ class Window(QMainWindow):
             self.set_button_state()
 
     def handle_reset(self):
-        quit_msg = 'Are you sure you want to reset your table?'
+        quit_msg = 'Are you sure you want to reset your accounts?'
         confirm = QMessageBox\
                 .question(self, 'Reset Table', quit_msg, QMessageBox.Yes | QMessageBox.No)
         if confirm == QMessageBox.Yes:

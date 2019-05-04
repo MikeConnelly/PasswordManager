@@ -29,8 +29,6 @@ class PasswordManager:
 
     def create_user(self, username, masterpass):
         """Adds new user to user_table in database"""
-
-        # check if user already exists, throws error if multiple results
         user_list = self.session.query(User).filter(User.username == username).one_or_none()
         if user_list is not None:
             raise UserError('user already exists')
@@ -47,11 +45,11 @@ class PasswordManager:
         if user is None:
             raise UserError('user does not exist')
         hashed_pass = user.master_password
-        success, key = compare_passwords(password, hashed_pass)
+        success, cipher = compare_passwords(password, hashed_pass)
         if not success:
             raise UserError('incorrect password')
         self.user = user
-        self.crypto = Cipher(key)
+        self.crypto = cipher
         return True
 
     def create_user_and_login(self, username, masterpass):
