@@ -28,6 +28,7 @@ def get_hashed_password(password):
     hashed = ph.hash(password)
     return hashed
 
+
 def compare_passwords(password, stored_password):
     """compares a plaintext password with the stored, encrypted password"""
     ph = PasswordHasher()
@@ -38,6 +39,7 @@ def compare_passwords(password, stored_password):
         return (True, False)
     except VerifyMismatchError:
         return (False, False)
+
 
 def generate_key():
     """generate new key"""
