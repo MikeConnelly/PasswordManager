@@ -18,7 +18,7 @@ class TestAddAccounts(unittest.TestCase):
 
     def test_add_account(self):
         self.pm.login('test_user_1', 'test_pass_1')
-        self.pm.add_user_entry('account', 'email', 'password')
+        self.pm.add_account('account', 'email', 'password')
         query = self.pm.session.query(Account)\
             .filter(Account.user_id == self.pm.user.id)\
             .filter(Account.name == 'account')\
@@ -32,9 +32,9 @@ class TestAddAccounts(unittest.TestCase):
 
     def test_add_multple_accounts(self):
         self.pm.login('test_user_1', 'test_pass_1')
-        self.pm.add_user_entry('account1', 'email1', 'password1')
-        self.pm.add_user_entry('account2', 'email2', 'password2', 'url2')
-        self.pm.add_user_entry('account3', 'email3', 'password3')
+        self.pm.add_account('account1', 'email1', 'password1')
+        self.pm.add_account('account2', 'email2', 'password2', 'url2')
+        self.pm.add_account('account3', 'email3', 'password3')
         results = self.pm.session.query(Account).filter(Account.user_id == self.pm.user.id).all()
         self.assertEqual(len(results), 3)
         result1 = results[0]
@@ -55,16 +55,16 @@ class TestAddAccounts(unittest.TestCase):
 
     def test_no_duplicate_accounts(self):
         self.pm.login('test_user_1', 'test_pass_1')
-        self.pm.add_user_entry('account', 'email', 'password')
+        self.pm.add_account('account', 'email', 'password')
         with self.assertRaises(AccountError):
-            self.pm.add_user_entry('account', 'any_email', 'any_password', 'any_url')
+            self.pm.add_account('account', 'any_email', 'any_password', 'any_url')
 
     def test_multiple_users_add_accounts(self):
         self.pm.login('test_user_1', 'test_pass_1')
-        self.pm.add_user_entry('account', 'email', 'password', 'url')
+        self.pm.add_account('account', 'email', 'password', 'url')
         id1 = self.pm.user.id
         self.pm.login('test_user_2', 'test_pass_2')
-        self.pm.add_user_entry('account', 'email', 'password', 'url')
+        self.pm.add_account('account', 'email', 'password', 'url')
         id2 = self.pm.user.id
         self.assertEqual(len(self.pm.session.query(Account).filter(Account.user_id == id1).all()), 1)
         self.assertEqual(len(self.pm.session.query(Account).filter(Account.user_id == id2).all()), 1)

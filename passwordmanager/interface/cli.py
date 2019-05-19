@@ -27,9 +27,9 @@ class Interface:
         """main application loop to execute user commands"""
         while True:
             print('1: retrieve table')
-            print('2: add an entry')
-            print('3: change an entry')
-            print('4: remove an entry')
+            print('2: add an account')
+            print('3: change an account')
+            print('4: remove an account')
             print('5: add a field')
             print('6: rename a field')
             print('7: remove a field')
@@ -37,9 +37,9 @@ class Interface:
             print('9: reset')
             commands = {
                 '1': self.retrieve_table_cmd,
-                '2': self.add_user_entry_cmd,
-                '3': self.change_entry_cmd,
-                '4': self.remove_entry_cmd,
+                '2': self.add_account_cmd,
+                '3': self.change_account_cmd,
+                '4': self.remove_account_cmd,
                 '5': self.add_column_cmd,
                 '6': self.rename_column_cmd,
                 '7': self.remove_column_cmd,
@@ -98,9 +98,9 @@ class Interface:
                 index += 1
         print('-----------')
 
-    def add_user_entry_cmd(self):
+    def add_account_cmd(self):
         """CLI to add an account for the current user"""
-        print('---add an entry or type "exit"---')
+        print('---add an account or type "exit"---')
         custom_cols = self.pm.get_custom_columns()
         expansion = {}
 
@@ -122,12 +122,12 @@ class Interface:
             return
 
         try:
-            self.pm.add_user_entry(account, username, password, url, expansion)
+            self.pm.add_account(account, username, password, url, expansion)
             print('---account added---')
         except AccountError as err:
             print(str(err))
 
-    def select_user_account_cmd(self, mode='remove or change'):
+    def select_account_cmd(self, mode='remove or change'):
         """
         print user accounts and return the one selected\n
         raises ExitError
@@ -148,28 +148,28 @@ class Interface:
 
         return selection
 
-    def remove_entry_cmd(self):
+    def remove_account_cmd(self):
         """user selects an account to remove"""
-        print('---remove an entry---')
+        print('---remove an account---')
         try:
-            selection = self.select_user_account_cmd('remove')
+            selection = self.select_account_cmd('remove')
             confirmation = ''
             while confirmation not in ('y', 'Y'):
                 print(f"are you sure you want to remove {selection['name']}? (y/n):")
                 confirmation = input()
                 if confirmation in ('n', 'N'):
                     return
-            self.pm.remove_entry(selection)
+            self.pm.remove_account(selection)
         except ExitError:
             return
 
         print(selection['name'] + ' successfully removed')
 
-    def change_entry_cmd(self):
+    def change_account_cmd(self):
         """user selects an account and field to update"""
-        print('---change an entry---')
+        print('---change an account---')
         try:
-            selection = self.select_user_account_cmd('change')
+            selection = self.select_account_cmd('change')
         except ExitError:
             return
 
@@ -192,7 +192,7 @@ class Interface:
                 return
         print('enter new field')
         new_field = input()
-        self.pm.change_entry(selection, col_selection, new_field)
+        self.pm.change_account(selection, col_selection, new_field)
         print('---account successfully updated---')
 
     def add_column_cmd(self):
