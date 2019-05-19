@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QAbstractScrollArea, QAbstractItemView, QStyledItemDelegate, QStyleOptionViewItem, QStyle
 )
 import qdarkstyle
-from passwordmanager.src.password_manager import generate_password, UserError, AccountError
+from passwordmanager.src.password_manager import generate_password, UserError, AccountError, CsvError
 
 
 class CreateAccount(QDialog):
@@ -198,11 +198,11 @@ class AddRowDialog(QDialog):
             custom = None
         try:
             if self.fields[0].text() and self.fields[1].text() and self.fields[2].text():
-                self.pm.add_user_entry(
+                self.pm.add_account(
                     self.fields[0].text(),
                     self.fields[1].text(),
                     self.fields[2].text(),
-                    custom
+                    custom_cols=custom
                 )
                 self.accept()
             else:
@@ -269,7 +269,7 @@ class ModifyDialog(QDialog):
                     else:
                         cols.append(col)
                         new_fields.append(self.fields[index].text())
-                self.pm.change_entry(self.account['name'], cols, new_fields)
+                self.pm.change_account(self.account['name'], cols, new_fields)
                 self.accept()
             else:
                 self.error_message.setText('name, email, and password fields required')
@@ -629,7 +629,7 @@ class Window(QMainWindow):
             msg = f"Are you sure you want to remove {account_name}"
             choice = QMessageBox.question(self, 'Remove?', msg, QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
-                self.pm.remove_entry(account_name)
+                self.pm.remove_account(account_name)
                 self.setup_table()
 
     def handle_add_column(self):
@@ -693,8 +693,11 @@ class Window(QMainWindow):
     def handle_import(self, encrypted=False):
         path, _ = QFileDialog.getOpenFileName(self, 'Import ', 'c://', 'CSV Files (*.csv)')
         if path:
-            self.pm.import_from_csv(path)
-            self.setup_table()
+            try:
+                self.pm.import_from_csv(path)
+                self.setup_table()
+            except CsvError:
+                pass
 
     def change_theme(self):
         if self.light_theme:

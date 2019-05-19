@@ -64,80 +64,92 @@ class PasswordManager:
         self.create_user(username, masterpass, key_path)
         self.login(username, masterpass, key_path)
         self.add_column('url')
+    
+    def user_query(self):
+        """Return a database query for the current user"""
+        return self.session.query(User).filter(User.id == self.user.id)
+
+    def account_query(self, field, value):
+        """Return a database query from an account name or id"""
+        query = None
+        if field == 'id':
+            query = self.session.query(Account)\
+                    .filter(Account.user_id == self.user.id)\
+                    .filter(Account.id == value)
+        elif field == 'name':
+            account_id = None
+            for account in self.user.accounts:
+                if self.crypto.decrypt(account.name) == value:
+                    account_id = account.id
+                    break
+            if account_id:
+                query = self.session.query(Account)\
+                        .filter(Account.user_id == self.user.id)\
+                        .filter(Account.id == account_id)
+        return query
+
+    def get_account(self, field, value):
+        """Return an account or None from a name or id"""
+        query = self.account_query(field, value)
+        return query.one_or_none() if query else None
 
     def retrieve_table(self, decrypt=True):
         """Prints the table of accounts for the current user"""
         table = []
         for account in self.user.accounts:
+            name = self.crypto.decrypt(account.name) if decrypt else account.name
             email = self.crypto.decrypt(account.email) if decrypt else account.email
             password = self.crypto.decrypt(account.password) if decrypt else account.password
-            entry = {
-                'name': account.name,
+            curr_account = {
+                'name': name,
                 'email': email,
                 'password': password
             }
             if account.expansion:
                 expansion = json.loads(account.expansion)
                 for field, value in expansion.items():
-                    entry[field] = value
-            table.append(entry)
+                    curr_account[field] = self.crypto.decrypt(value) if decrypt else value
+            table.append(curr_account)
         return table
 
-    def add_user_entry(self, account_name, account_email, account_password, custom_cols=None):
+    def add_account(self, account_name, account_email, account_password, custom_cols=None):
         """Add an account to the current user's table"""
-
-        row = self.session.query(Account)\
-            .filter(Account.user_id == self.user.id)\
-            .filter(Account.name == account_name)\
-            .one_or_none()
+        row = self.get_account('name', account_name)
         if row is not None:
             raise AccountError(f"account with name {account_name} already exists")
-
-        hashed_pass = self.crypto.encrypt(account_password)
-        hashed_email = self.crypto.encrypt(account_email)
-
         account = Account()
-        account.name = account_name
-        account.email = hashed_email
-        account.password = hashed_pass
         account.user_id = self.user.id
+        account.name = self.crypto.encrypt(account_name)
+        account.email = self.crypto.encrypt(account_email)
+        account.password = self.crypto.encrypt(account_password)
         if custom_cols:
+            for col, value in custom_cols.items():
+                custom_cols[col] = self.crypto.encrypt(value)
             account.expansion = json.dumps(custom_cols)
-
         self.session.add(account)
         self.session.commit()
 
-    def remove_entry(self, account_name):
+    def remove_account(self, account_name):
         """Removes an account from the current user's table"""
-        row = self.session.query(Account)\
-                .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == account_name)\
-                .one()
+        row = self.get_account('name', account_name)
         self.session.delete(row)
         self.session.commit()
 
-    def change_entry(self, account_name, cols, new_fields):
+    def change_account(self, account_name, cols, new_fields):
         """Changes multiple fields in accounts"""
-        account_id = self.session.query(Account)\
-                .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == account_name)\
-                .one()\
-                .id
-        query = self.session.query(Account).filter(Account.id == account_id)
+        account_id = self.get_account('name', account_name).id
+        query = self.account_query('id', account_id)
         account = query.one()
         for col, new_field in zip(cols, new_fields):
             update_col, update_field = (col, new_field)
-            if col == 'name':
-                if self.session.query(Account)\
-                        .filter(Account.user_id == self.user.id)\
-                        .filter(Account.name == new_field)\
-                        .one_or_none() is not None:
-                    raise AccountError(f"account with name {new_field} already exists")
-            elif col in ('email', 'password'):
+            if col in self.required_fields:
+                if col == 'name':
+                    if self.get_account('name', new_field) is not None:
+                        raise AccountError(f"account with name {new_field} already exists")
                 update_field = self.crypto.encrypt(new_field)
-            elif col in self.get_custom_columns():
+            else:
                 expansion = json.loads(account.expansion) if account.expansion else {}
-                expansion[col] = new_field
+                expansion[col] = self.crypto.encrypt(new_field)
                 update_col = 'expansion'
                 update_field = json.dumps(expansion)
             query.update({update_col: update_field})
@@ -164,7 +176,7 @@ class PasswordManager:
         custom_cols = self.get_custom_columns()
         custom_cols.append(name)
         cols_str = ','.join(custom_cols)
-        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
+        self.user_query().update({'custom_cols': cols_str})
         self.session.commit()
 
     def remove_column(self, name):
@@ -172,7 +184,7 @@ class PasswordManager:
         custom_cols = self.get_custom_columns()
         custom_cols.remove(name)
         cols_str = ','.join(custom_cols)
-        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
+        self.user_query().update({'custom_cols': cols_str})
         self.session.commit()
         # Remove column data from all the user's accounts
         for account in self.user.accounts:
@@ -180,10 +192,7 @@ class PasswordManager:
                 expansion = json.loads(account.expansion)
                 expansion.pop(name)
                 expansion = json.dumps(expansion)
-                self.session.query(Account)\
-                        .filter(Account.user_id == self.user.id)\
-                        .filter(Account.name == account.name)\
-                        .update({'expansion': expansion})
+                self.account_query('name', account.name).update({'expansion': expansion})
                 self.session.commit()
 
     def rename_column(self, name, new_name):
@@ -192,41 +201,34 @@ class PasswordManager:
         index = custom_cols.index(name)
         custom_cols[index] = new_name
         col_str = ','.join(custom_cols)
-        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': col_str})
+        self.user_query().update({'custom_cols': col_str})
         # Rename column in all accounts
         for account in self.user.accounts:
             if account.expansion and name in account.expansion:
                 expansion = json.loads(account.expansion)
                 expansion[new_name] = expansion.pop(name)
                 expansion = json.dumps(expansion)
-                self.session.query(Account)\
-                        .filter(Account.user_id == self.user.id)\
-                        .filter(Account.name == account.name)\
-                        .update({'expansion': expansion})
+                self.account_query('name', account.name).update({'expansion': expansion})
                 self.session.commit()
 
     def reset_all(self):
         """Remove all user accounts and reset custom columns"""
-        self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': ''})
+        self.user_query().update({'custom_cols': ''})
         self.session.commit()
         for account in self.user.accounts:
-            query = self.session.query(Account)\
-                    .filter(Account.user_id == self.user.id)\
-                    .filter(Account.name == account.name)\
-                    .one()
+            query = self.get_account('name', account.name)
             self.session.delete(query)
             self.session.commit()
 
     def logout(self):
         """Removes user and closes database session"""
         self.user = None
+        self.crypto = None
         self.session.close()
 
     def color_row(self, account_name, color):
         """Set color field for the given account"""
-        query = self.session.query(Account)\
-                .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == account_name)
+        query = self.account_query('name', account_name)
         account = query.one()
         extras = json.loads(account.extras) if account.extras else {}
         extras['color'] = color
@@ -235,10 +237,7 @@ class PasswordManager:
 
     def get_row_color(self, account_name):
         """Get color field for the given account"""
-        account = self.session.query(Account)\
-                .filter(Account.user_id == self.user.id)\
-                .filter(Account.name == account_name)\
-                .one()
+        account = self.get_account('name', account_name)
         extras = json.loads(account.extras) if account.extras else {}
         return extras['color'] if 'color' in extras else None
 
@@ -261,11 +260,11 @@ class PasswordManager:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 account_name = row['name']
-                account = self.session.query(Account).filter(Account.name == account_name).one_or_none()
-                # check for duplicate
+                account = self.get_account('name', account_name)
+                # check for duplicate name
                 if account is None or replace_duplicates:
                     if replace_duplicates:
-                        self.remove_entry(account_name)
+                        self.remove_account(account_name)
                     custom = {field: value for field, value in row.items() if field not in self.required_fields}
                     for column in custom:
                         if add_columns and column not in self.get_custom_columns():
@@ -273,7 +272,7 @@ class PasswordManager:
                         else:
                             if column not in self.get_custom_columns():
                                 custom.pop(column)
-                    self.add_user_entry(row['name'], row['email'], row['password'], custom_cols=custom)
+                    self.add_account(row['name'], row['email'], row['password'], custom_cols=custom)
 
     def verify_csv(self, path):
         """Verifies the format of a csv file before importing"""
@@ -286,7 +285,7 @@ class PasswordManager:
         return True
 
 
-def generate_password(pass_len):
+def generate_password(pass_len=16):
     """generate random password"""
     chars = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?"
     password = ''.join(random.sample(chars, pass_len))
