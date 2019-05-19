@@ -15,6 +15,7 @@ class CreateAccount(QDialog):
     def __init__(self, pm, parent=None):
         super(CreateAccount, self).__init__(parent)
         self.pm = pm
+        self.key_path = ''
         self.name_label = QLabel('account name:', self)
         self.name_field = QLineEdit(self)
         self.pass_label = QLabel('password:', self)
@@ -23,6 +24,9 @@ class CreateAccount(QDialog):
         self.confirm_pass_label = QLabel('confirm password:', self)
         self.confirm_pass_field = QLineEdit(self)
         self.confirm_pass_field.setEchoMode(QLineEdit.Password)
+        self.key_path_button = QPushButton('choose key location', self)
+        self.key_path_button.clicked.connect(self.get_path)
+        self.key_path_label = QLabel("key location:", self)
         self.register_button = QPushButton('create account', self)
         self.register_button.clicked.connect(self.handle_register)
         self.cancel_button = QPushButton('cancel', self)
@@ -42,6 +46,8 @@ class CreateAccount(QDialog):
         grid_layout.addWidget(self.pass_field, 1, 1)
         grid_layout.addWidget(self.confirm_pass_label, 2, 0)
         grid_layout.addWidget(self.confirm_pass_field, 2, 1)
+        grid_layout.addWidget(self.key_path_button, 3, 0)
+        grid_layout.addWidget(self.key_path_label, 3, 1)
 
         horizontal_layout = QHBoxLayout()
         horizontal_layout.addWidget(self.register_button)
@@ -52,13 +58,22 @@ class CreateAccount(QDialog):
         vertical_layout.addLayout(horizontal_layout)
         vertical_layout.addWidget(self.error_message)
 
+    def get_path(self):
+        path, _ = QFileDialog.getSaveFileName(self, 'Generate key file', 'c://key', 'BIN Files (*.bin)')
+        if path:
+            self.key_path = path
+            self.key_path_label.setText(f"key location: {self.key_path}")
+
     def handle_register(self):
         try:
-            if self.pass_field.text() == self.confirm_pass_field.text():
-                self.pm.create_user_and_login(self.name_field.text(), self.pass_field.text())
-                self.accept()
+            if self.name_field.text() and self.pass_field.text() and self.key_path:
+                if self.pass_field.text() == self.confirm_pass_field.text():
+                    self.pm.create_user_and_login(self.name_field.text(), self.pass_field.text(), self.key_path)
+                    self.accept()
+                else:
+                    self.error_message.setText('password do not match')
             else:
-                self.error_message.setText('password do not match')
+                self.error_message.setText('all fields are required')
         except UserError as err:
             self.error_message.setText(str(err))
 
@@ -67,11 +82,15 @@ class Login(QDialog):
     def __init__(self, pm, parent=None):
         super(Login, self).__init__(parent)
         self.pm = pm
+        self.key_path = ''
         self.name_label = QLabel('account name:', self)
         self.name_field = QLineEdit(self)
         self.pass_label = QLabel('password name:', self)
         self.pass_field = QLineEdit(self)
         self.pass_field.setEchoMode(QLineEdit.Password)
+        self.key_path_button = QPushButton('choose key location', self)
+        self.key_path_button.clicked.connect(self.get_path)
+        self.key_path_label = QLabel("key location:", self)
         self.login_button = QPushButton('login', self)
         self.login_button.clicked.connect(self.handle_login)
         self.cancel_button = QPushButton('cancel', self)
@@ -91,6 +110,8 @@ class Login(QDialog):
         grid_layout.addWidget(self.name_field, 0, 1)
         grid_layout.addWidget(self.pass_label, 1, 0)
         grid_layout.addWidget(self.pass_field, 1, 1)
+        grid_layout.addWidget(self.key_path_button, 2, 0)
+        grid_layout.addWidget(self.key_path_label, 2, 1)
 
         horizontal_layout = QHBoxLayout()
         horizontal_layout.addWidget(self.login_button)
@@ -102,10 +123,19 @@ class Login(QDialog):
         vertical_layout.addLayout(horizontal_layout)
         vertical_layout.addWidget(self.error_message)
 
+    def get_path(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Select key file', 'c://', 'BIN Files (*.bin)')
+        if path:
+            self.key_path = path
+            self.key_path_label.setText(f"key location: {self.key_path}")
+
     def handle_login(self):
         try:
-            self.pm.login(self.name_field.text(), self.pass_field.text())
-            self.accept()
+            if self.name_field.text() and self.pass_field.text() and self.key_path:
+                self.pm.login(self.name_field.text(), self.pass_field.text(), self.key_path)
+                self.accept()
+            else:
+                self.error_message.setText('all fields are required')
         except UserError as err:
             self.error_message.setText(str(err))
 
@@ -162,8 +192,8 @@ class AddRowDialog(QDialog):
         vertical_layout.addWidget(self.error_message)
 
     def handle_add(self):
-        if len(self.cols) > 4:
-            custom = {col: self.fields[index].text() for index, col in enumerate(self.cols[4:], 4)}
+        if len(self.cols) > 3:
+            custom = {col: self.fields[index].text() for index, col in enumerate(self.cols[3:], 3)}
         else:
             custom = None
         try:
@@ -172,7 +202,6 @@ class AddRowDialog(QDialog):
                     self.fields[0].text(),
                     self.fields[1].text(),
                     self.fields[2].text(),
-                    self.fields[3].text(),
                     custom
                 )
                 self.accept()
@@ -400,8 +429,6 @@ class Ui_MainWindow:
         self.tableWidget.setHorizontalHeaderItem(1, item)
         item = QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(2, item)
-        item = QTableWidgetItem()
-        self.tableWidget.setHorizontalHeaderItem(3, item)
         self.tableWidget.horizontalHeader().setDefaultSectionSize(100)
         self.tableWidget.horizontalHeader().setMinimumSectionSize(100)
         self.tableWidget.verticalHeader().setCascadingSectionResizes(False)
@@ -480,8 +507,6 @@ class Ui_MainWindow:
         item.setText(_translate("MainWindow", "Email"))
         item = self.tableWidget.horizontalHeaderItem(2)
         item.setText(_translate("MainWindow", "Password"))
-        item = self.tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("MainWindow", "URL"))
         self.search_bar.setPlaceholderText(_translate("MainWindow", "Search"))
         self.add_account_button.setText(_translate("MainWindow", "+A"))
         self.modify_account_button.setText(_translate("MainWindow", "/A"))
@@ -541,14 +566,17 @@ class Window(QMainWindow):
         settings_menu = QMenu()
         eexport = QAction('export encrypted', self)
         dexport = QAction('export decrypted', self)
+        dimport = QAction('import decrypted file', self)
         reset = QAction('reset table', self)
         theme = QAction('dark/light theme', self)
-        eexport.triggered.connect(lambda: self.handle_export(False))
-        dexport.triggered.connect(lambda: self.handle_export(True))
+        eexport.triggered.connect(lambda: self.handle_export(decrypt=False))
+        dexport.triggered.connect(lambda: self.handle_export(decrypt=True))
+        dimport.triggered.connect(lambda: self.handle_import(encrypted=False))
         reset.triggered.connect(self.handle_reset)
         theme.triggered.connect(self.change_theme)
         settings_menu.addAction(eexport)
         settings_menu.addAction(dexport)
+        settings_menu.addAction(dimport)
         settings_menu.addAction(reset)
         settings_menu.addAction(theme)
         self.ui.settings_button.setMenu(settings_menu)
@@ -658,9 +686,15 @@ class Window(QMainWindow):
                 self.setup_table()
 
     def handle_export(self, decrypt=False):
-        path, _ = QFileDialog.getSaveFileName(self, 'Save file', 'c://accounts', 'CSV Files (*.csv)')
+        path, _ = QFileDialog.getSaveFileName(self, 'Export', 'c://accounts', 'CSV Files (*.csv)')
         if path:
             self.pm.export_to_csv(path, decrypt)
+
+    def handle_import(self, encrypted=False):
+        path, _ = QFileDialog.getOpenFileName(self, 'Import ', 'c://', 'CSV Files (*.csv)')
+        if path:
+            self.pm.import_from_csv(path)
+            self.setup_table()
 
     def change_theme(self):
         if self.light_theme:

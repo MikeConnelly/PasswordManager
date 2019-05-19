@@ -1,9 +1,10 @@
 import os
+import csv
 import json
 import random
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .crypto import Cipher, get_encrypted_password, compare_passwords
+from .crypto import Cipher, get_hashed_password, compare_passwords, generate_key
 from .models import Base, Account, User
 
 
@@ -13,21 +14,20 @@ class PasswordManager:
     """
 
     def __init__(self, paths):
-        self.user = None
         self.sqlite_file = paths['database_path']
+        self.user = None
         self.crypto = None
-
         if not os.path.isfile(self.sqlite_file):
             engine = create_engine('sqlite://' + self.sqlite_file)
             Base.metadata.create_all(bind=engine)
         else:
             engine = create_engine('sqlite://' + self.sqlite_file)
             Base.metadata.bind = engine
-
         Session = sessionmaker(bind=engine)
         self.session = Session()
+        self.required_fields = ['name', 'email', 'password']
 
-    def create_user(self, username, masterpass):
+    def create_user(self, username, masterpass, key_path):
         """Adds new user to user_table in database"""
         user_list = self.session.query(User).filter(User.username == username).one_or_none()
         if user_list is not None:
@@ -35,27 +35,35 @@ class PasswordManager:
         else:
             user = User()
             user.username = username
-            user.master_password = get_encrypted_password(masterpass)
+            user.master_password = get_hashed_password(masterpass)
+            with open(key_path, 'w') as k:
+                k.write(generate_key().decode('utf-8'))
             self.session.add(user)
             self.session.commit()
 
-    def login(self, username, password):
+    def login(self, username, password, key_path):
         """Sets user for current session"""
-        user = self.session.query(User).filter(User.username == username).one_or_none()
+        query = self.session.query(User).filter(User.username == username)
+        user = query.one_or_none()
         if user is None:
             raise UserError('user does not exist')
         hashed_pass = user.master_password
-        success, cipher = compare_passwords(password, hashed_pass)
+        success, rehash = compare_passwords(password, hashed_pass)
         if not success:
             raise UserError('incorrect password')
+        if rehash:
+            query.update({'master_password': get_hashed_password(password)})
+        with open(key_path, 'r') as k:
+            key = k.read()
         self.user = user
-        self.crypto = cipher
+        self.crypto = Cipher(key)
         return True
 
-    def create_user_and_login(self, username, masterpass):
+    def create_user_and_login(self, username, masterpass, key_path):
         """Adds new user to database and logs them in"""
-        self.create_user(username, masterpass)
-        self.login(username, masterpass)
+        self.create_user(username, masterpass, key_path)
+        self.login(username, masterpass, key_path)
+        self.add_column('url')
 
     def retrieve_table(self, decrypt=True):
         """Prints the table of accounts for the current user"""
@@ -66,8 +74,7 @@ class PasswordManager:
             entry = {
                 'name': account.name,
                 'email': email,
-                'password': password,
-                'url': account.url
+                'password': password
             }
             if account.expansion:
                 expansion = json.loads(account.expansion)
@@ -76,7 +83,7 @@ class PasswordManager:
             table.append(entry)
         return table
 
-    def add_user_entry(self, account_name, account_email, account_password, account_url='', custom_cols=None):
+    def add_user_entry(self, account_name, account_email, account_password, custom_cols=None):
         """Add an account to the current user's table"""
 
         row = self.session.query(Account)\
@@ -93,7 +100,6 @@ class PasswordManager:
         account.name = account_name
         account.email = hashed_email
         account.password = hashed_pass
-        account.url = account_url
         account.user_id = self.user.id
         if custom_cols:
             account.expansion = json.dumps(custom_cols)
@@ -144,18 +150,18 @@ class PasswordManager:
 
     def get_all_columns(self):
         """Returns all the user's required and custom fields"""
-        required_fields = ['name', 'email', 'password', 'url']
+        columns = self.required_fields
         custom_cols = self.get_custom_columns()
-        required_fields.extend(custom_cols)
-        return required_fields
+        columns.extend(custom_cols)
+        return columns
 
     def add_column(self, name):
         """Add a column to the user's table of accounts"""
         if ',' in name:
             raise UserError('column names cannot contain ","')
-        custom_cols = self.get_custom_columns()
-        if name in custom_cols:
+        if name in self.get_all_columns():
             raise UserError(f"column with name {name} already exists")
+        custom_cols = self.get_custom_columns()
         custom_cols.append(name)
         cols_str = ','.join(custom_cols)
         self.session.query(User).filter(User.id == self.user.id).update({'custom_cols': cols_str})
@@ -217,6 +223,7 @@ class PasswordManager:
         self.session.close()
 
     def color_row(self, account_name, color):
+        """Set color field for the given account"""
         query = self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
                 .filter(Account.name == account_name)
@@ -227,6 +234,7 @@ class PasswordManager:
         self.session.commit()
 
     def get_row_color(self, account_name):
+        """Get color field for the given account"""
         account = self.session.query(Account)\
                 .filter(Account.user_id == self.user.id)\
                 .filter(Account.name == account_name)\
@@ -235,11 +243,47 @@ class PasswordManager:
         return extras['color'] if 'color' in extras else None
 
     def export_to_csv(self, path, decrypt=False):
+        """Export account table to a csv file"""
         table = self.retrieve_table(decrypt)
-        with open(path, 'w') as f:
+        with open(path, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.get_all_columns(), extrasaction='ignore', dialect='excel')
+            writer.writeheader()
             for account in table:
-                for key, value in account.items():
-                    f.write(f"{key},{value}\n")
+                writer.writerow(account)
+
+    def import_from_csv(self, path, reset=False, replace_duplicates=False, add_columns=True):
+        """Import account table from csv file"""
+        if not self.verify_csv(path):
+            raise CsvError()
+        if reset:
+            self.reset_all()
+        with open(path, 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                account_name = row['name']
+                account = self.session.query(Account).filter(Account.name == account_name).one_or_none()
+                # check for duplicate
+                if account is None or replace_duplicates:
+                    if replace_duplicates:
+                        self.remove_entry(account_name)
+                    custom = {field: value for field, value in row.items() if field not in self.required_fields}
+                    for column in custom:
+                        if add_columns and column not in self.get_custom_columns():
+                            self.add_column(column)
+                        else:
+                            if column not in self.get_custom_columns():
+                                custom.pop(column)
+                    self.add_user_entry(row['name'], row['email'], row['password'], custom_cols=custom)
+
+    def verify_csv(self, path):
+        """Verifies the format of a csv file before importing"""
+        with open(path, 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                for attr in self.required_fields:
+                    if attr not in row:
+                        return False
+        return True
 
 
 def generate_password(pass_len):
@@ -255,3 +299,7 @@ class UserError(Exception):
 
 class AccountError(Exception):
     """account exception docstring"""
+
+
+class CsvError(Exception):
+    """exception raised from attempting to import an invalid csv"""
