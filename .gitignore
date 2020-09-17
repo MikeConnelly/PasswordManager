@@ -6,3 +6,4 @@ index/
 __pycache__/
 *.pyc
 notes.txt
+pmenv

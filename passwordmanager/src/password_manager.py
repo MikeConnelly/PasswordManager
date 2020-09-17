@@ -64,7 +64,7 @@ class PasswordManager:
         self.create_user(username, masterpass, key_path)
         self.login(username, masterpass, key_path)
         self.add_column('url')
-    
+
     def user_query(self):
         """Return a database query for the current user"""
         return self.session.query(User).filter(User.id == self.user.id)

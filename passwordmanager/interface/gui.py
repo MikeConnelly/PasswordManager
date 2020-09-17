@@ -8,7 +8,9 @@ from PyQt5.QtWidgets import (
     QAbstractScrollArea, QAbstractItemView, QStyledItemDelegate, QStyleOptionViewItem, QStyle
 )
 import qdarkstyle
-from passwordmanager.src.password_manager import generate_password, UserError, AccountError, CsvError
+from passwordmanager.src.password_manager import(
+    generate_password, UserError, AccountError, CsvError
+)
 
 
 class CreateAccount(QDialog):
@@ -59,7 +61,9 @@ class CreateAccount(QDialog):
         vertical_layout.addWidget(self.error_message)
 
     def get_path(self):
-        path, _ = QFileDialog.getSaveFileName(self, 'Generate key file', 'c://key', 'BIN Files (*.bin)')
+        path, _ = QFileDialog.getSaveFileName(
+            self, 'Generate key file', 'c://key', 'BIN Files (*.bin)'
+        )
         if path:
             self.key_path = path
             self.key_path_label.setText(f"key location: {self.key_path}")
